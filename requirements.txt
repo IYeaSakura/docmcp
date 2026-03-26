@@ -1,0 +1,22 @@
+# DocMCP 依赖
+
+# 安全相关
+PyJWT>=2.8.0
+python-magic>=0.4.27
+cryptography>=41.0.0
+
+# 性能相关
+psutil>=5.9.0
+
+# 异步支持
+aiohttp>=3.8.0
+
+# 类型提示
+typing-extensions>=4.7.0
+
+# 开发依赖（可选）
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+black>=23.7.0
+mypy>=1.5.0
