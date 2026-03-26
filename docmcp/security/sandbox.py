@@ -12,7 +12,10 @@ import signal
 import shutil
 import tempfile
 import subprocess
-import resource
+try:
+    import resource
+except ImportError:
+    resource = None  # Windows does not have resource module
 import threading
 from typing import Dict, Any, Optional, List, Callable, Union
 from dataclasses import dataclass, field
@@ -102,6 +105,9 @@ class SandboxExecutor:
     
     def _set_resource_limits(self):
         """设置进程资源限制（在子进程中调用）"""
+        if resource is None:
+            return  # Skip on Windows
+        
         # 内存限制
         max_memory_bytes = self.resource_limits.max_memory_mb * 1024 * 1024
         resource.setrlimit(resource.RLIMIT_AS, (max_memory_bytes, max_memory_bytes))

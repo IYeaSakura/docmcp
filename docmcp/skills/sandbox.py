@@ -17,7 +17,10 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-import resource
+try:
+    import resource
+except ImportError:
+    resource = None  # Windows does not have resource module
 import signal
 import subprocess
 import sys
