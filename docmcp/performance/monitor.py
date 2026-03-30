@@ -41,7 +41,7 @@ class MetricValue:
     metric_type: MetricType
     timestamp: float
     labels: Dict[str, str] = field(default_factory=dict)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典"""
         return {
@@ -78,7 +78,7 @@ class AlertRule:
     severity: str  # info, warning, critical
     message: str
     enabled: bool = True
-    
+
     # 状态
     triggered_at: Optional[float] = None
     resolved_at: Optional[float] = None
@@ -103,45 +103,45 @@ class Alert:
 
 class MetricsCollector:
     """指标收集器
-    
+
     收集和存储各种性能指标，支持：
     - 多种指标类型
     - 标签支持
     - 数据保留
     - 聚合查询
     """
-    
+
     def __init__(
         self,
         max_data_points: int = 10000,
         retention_hours: int = 24
     ):
         """初始化指标收集器
-        
+
         Args:
             max_data_points: 每个指标最大数据点数
             retention_hours: 数据保留时间(小时)
         """
         self.max_data_points = max_data_points
         self.retention_hours = retention_hours
-        
+
         # 指标存储
         self._metrics: Dict[str, deque] = defaultdict(
             lambda: deque(maxlen=max_data_points)
         )
         self._counters: Dict[str, float] = defaultdict(float)
         self._gauges: Dict[str, float] = {}
-        
+
         # 锁
         self._lock = threading.RLock()
-        
+
         # 启动清理线程
         self._cleanup_thread = threading.Thread(target=self._cleanup_loop, daemon=True)
         self._cleanup_thread.start()
-    
+
     def counter(self, name: str, value: float = 1, labels: Optional[Dict[str, str]] = None) -> None:
         """增加计数器
-        
+
         Args:
             name: 指标名称
             value: 增加值
@@ -150,9 +150,9 @@ class MetricsCollector:
         with self._lock:
             label_key = self._labels_to_key(labels or {})
             full_name = f"{name}{label_key}"
-            
+
             self._counters[full_name] += value
-            
+
             metric = MetricValue(
                 name=name,
                 value=self._counters[full_name],
@@ -160,12 +160,12 @@ class MetricsCollector:
                 timestamp=time.time(),
                 labels=labels or {}
             )
-            
+
             self._metrics[name].append(metric)
-    
+
     def gauge(self, name: str, value: float, labels: Optional[Dict[str, str]] = None) -> None:
         """设置仪表盘值
-        
+
         Args:
             name: 指标名称
             value: 值
@@ -174,9 +174,9 @@ class MetricsCollector:
         with self._lock:
             label_key = self._labels_to_key(labels or {})
             full_name = f"{name}{label_key}"
-            
+
             self._gauges[full_name] = value
-            
+
             metric = MetricValue(
                 name=name,
                 value=value,
@@ -184,9 +184,9 @@ class MetricsCollector:
                 timestamp=time.time(),
                 labels=labels or {}
             )
-            
+
             self._metrics[name].append(metric)
-    
+
     def histogram(
         self,
         name: str,
@@ -195,7 +195,7 @@ class MetricsCollector:
         buckets: Optional[List[float]] = None
     ) -> None:
         """记录直方图值
-        
+
         Args:
             name: 指标名称
             value: 值
@@ -203,7 +203,7 @@ class MetricsCollector:
             buckets: 分桶边界
         """
         buckets = buckets or [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10]
-        
+
         with self._lock:
             # 记录原始值
             metric = MetricValue(
@@ -213,18 +213,18 @@ class MetricsCollector:
                 timestamp=time.time(),
                 labels=labels or {}
             )
-            
+
             self._metrics[name].append(metric)
-            
+
             # 记录分桶
             for bucket in buckets:
                 bucket_name = f"{name}_bucket"
                 bucket_labels = dict(labels or {})
                 bucket_labels['le'] = str(bucket)
-                
+
                 if value <= bucket:
                     self.counter(bucket_name, 1, bucket_labels)
-    
+
     def summary(
         self,
         name: str,
@@ -232,7 +232,7 @@ class MetricsCollector:
         labels: Optional[Dict[str, str]] = None
     ) -> None:
         """记录摘要值
-        
+
         Args:
             name: 指标名称
             value: 值
@@ -246,15 +246,15 @@ class MetricsCollector:
                 timestamp=time.time(),
                 labels=labels or {}
             )
-            
+
             self._metrics[name].append(metric)
-    
+
     def _labels_to_key(self, labels: Dict[str, str]) -> str:
         """将标签转换为键"""
         if not labels:
             return ""
         return "{" + ",".join(f'{k}="{v}"' for k, v in sorted(labels.items())) + "}"
-    
+
     def get_metric(
         self,
         name: str,
@@ -263,19 +263,19 @@ class MetricsCollector:
         labels: Optional[Dict[str, str]] = None
     ) -> List[MetricValue]:
         """获取指标数据
-        
+
         Args:
             name: 指标名称
             start_time: 开始时间
             end_time: 结束时间
             labels: 标签过滤
-            
+
         Returns:
             List[MetricValue]: 指标值列表
         """
         with self._lock:
             metrics = self._metrics.get(name, deque())
-            
+
             result = []
             for metric in metrics:
                 if start_time and metric.timestamp < start_time:
@@ -287,9 +287,9 @@ class MetricsCollector:
                 ):
                     continue
                 result.append(metric)
-            
+
             return result
-    
+
     def get_latest(self, name: str) -> Optional[MetricValue]:
         """获取最新指标值"""
         with self._lock:
@@ -297,16 +297,16 @@ class MetricsCollector:
             if metrics:
                 return metrics[-1]
             return None
-    
+
     def get_stats(self, name: str) -> Optional[Dict[str, float]]:
         """获取指标统计信息"""
         with self._lock:
             metrics = self._metrics.get(name, [])
             if not metrics:
                 return None
-            
+
             values = [m.value for m in metrics]
-            
+
             return {
                 'count': len(values),
                 'sum': sum(values),
@@ -315,7 +315,7 @@ class MetricsCollector:
                 'avg': sum(values) / len(values),
                 'last': values[-1],
             }
-    
+
     def _cleanup_loop(self) -> None:
         """清理循环"""
         while True:
@@ -325,33 +325,33 @@ class MetricsCollector:
             except Exception as e:
                 logger.error(f"Metrics cleanup error: {e}")
                 time.sleep(60)
-    
+
     def _cleanup_old_data(self) -> None:
         """清理过期数据"""
         cutoff = time.time() - (self.retention_hours * 3600)
-        
+
         with self._lock:
             for name, metrics in list(self._metrics.items()):
                 while metrics and metrics[0].timestamp < cutoff:
                     metrics.popleft()
-    
+
     def export_prometheus(self) -> str:
         """导出Prometheus格式"""
         lines = []
-        
+
         with self._lock:
             # 计数器
             for name, value in self._counters.items():
                 lines.append(f"# TYPE {name.split('{')[0]} counter")
                 lines.append(f"{name} {value}")
-            
+
             # 仪表盘
             for name, value in self._gauges.items():
                 lines.append(f"# TYPE {name.split('{')[0]} gauge")
                 lines.append(f"{name} {value}")
-        
+
         return "\n".join(lines)
-    
+
     def export_json(self) -> Dict[str, Any]:
         """导出JSON格式"""
         with self._lock:
@@ -363,14 +363,14 @@ class MetricsCollector:
 
 class HealthChecker:
     """健康检查器"""
-    
+
     def __init__(self):
         """初始化健康检查器"""
         self._checks: Dict[str, HealthCheck] = {}
         self._lock = threading.RLock()
         self._running = False
         self._thread: Optional[threading.Thread] = None
-    
+
     def register(
         self,
         name: str,
@@ -379,7 +379,7 @@ class HealthChecker:
         timeout: float = 5.0
     ) -> None:
         """注册健康检查
-        
+
         Args:
             name: 检查名称
             check_func: 检查函数，返回(是否健康, 消息)
@@ -393,58 +393,58 @@ class HealthChecker:
                 interval=interval,
                 timeout=timeout
             )
-    
+
     def unregister(self, name: str) -> bool:
         """注销健康检查"""
         with self._lock:
             return self._checks.pop(name, None) is not None
-    
+
     def start(self) -> None:
         """启动健康检查"""
         if self._running:
             return
-        
+
         self._running = True
         self._thread = threading.Thread(target=self._check_loop, daemon=True)
         self._thread.start()
-        
+
         logger.info("Health checker started")
-    
+
     def stop(self) -> None:
         """停止健康检查"""
         self._running = False
         if self._thread:
             self._thread.join(timeout=5)
-        
+
         logger.info("Health checker stopped")
-    
+
     def _check_loop(self) -> None:
         """检查循环"""
         while self._running:
             with self._lock:
                 checks = list(self._checks.values())
-            
+
             for check in checks:
                 if not check.enabled:
                     continue
-                
+
                 if check.last_check:
                     elapsed = (datetime.utcnow() - check.last_check).total_seconds()
                     if elapsed < check.interval:
                         continue
-                
+
                 self._run_check(check)
-            
+
             time.sleep(1)
-    
+
     def _run_check(self, check: HealthCheck) -> None:
         """执行单个检查"""
         try:
             healthy, message = check.check_func()
-            
+
             check.last_check = datetime.utcnow()
             check.last_message = message
-            
+
             if healthy:
                 check.last_status = HealthStatus.HEALTHY
                 check.consecutive_failures = 0
@@ -454,21 +454,21 @@ class HealthChecker:
                     check.last_status = HealthStatus.UNHEALTHY
                 else:
                     check.last_status = HealthStatus.DEGRADED
-                    
+
         except Exception as e:
             check.last_check = datetime.utcnow()
             check.last_status = HealthStatus.UNHEALTHY
             check.last_message = str(e)
             check.consecutive_failures += 1
-            
+
             logger.error(f"Health check {check.name} failed: {e}")
-    
+
     def get_status(self, name: Optional[str] = None) -> Dict[str, Any]:
         """获取健康状态
-        
+
         Args:
             name: 检查名称，None返回所有
-            
+
         Returns:
             Dict: 健康状态
         """
@@ -484,24 +484,24 @@ class HealthChecker:
                         'consecutive_failures': check.consecutive_failures,
                     }
                 return {}
-            
+
             # 返回所有检查状态
             checks_status = {}
             overall_status = HealthStatus.HEALTHY
-            
+
             for check in self._checks.values():
                 checks_status[check.name] = {
                     'status': check.last_status.value,
                     'message': check.last_message,
                     'last_check': check.last_check.isoformat() if check.last_check else None,
                 }
-                
+
                 # 更新整体状态
                 if check.last_status == HealthStatus.UNHEALTHY:
                     overall_status = HealthStatus.UNHEALTHY
                 elif check.last_status == HealthStatus.DEGRADED and overall_status == HealthStatus.HEALTHY:
                     overall_status = HealthStatus.DEGRADED
-            
+
             return {
                 'overall': overall_status.value,
                 'checks': checks_status,
@@ -510,63 +510,63 @@ class HealthChecker:
 
 class AlertManager:
     """告警管理器"""
-    
+
     def __init__(
         self,
         metrics_collector: MetricsCollector,
         check_interval: float = 30.0
     ):
         """初始化告警管理器
-        
+
         Args:
             metrics_collector: 指标收集器
             check_interval: 检查间隔
         """
         self.metrics = metrics_collector
         self.check_interval = check_interval
-        
+
         self._rules: Dict[str, AlertRule] = {}
         self._alerts: Dict[str, Alert] = {}
         self._handlers: List[Callable[[Alert], None]] = []
-        
+
         self._lock = threading.RLock()
         self._running = False
         self._thread: Optional[threading.Thread] = None
-    
+
     def add_rule(self, rule: AlertRule) -> None:
         """添加告警规则"""
         with self._lock:
             self._rules[rule.name] = rule
-    
+
     def remove_rule(self, name: str) -> bool:
         """移除告警规则"""
         with self._lock:
             return self._rules.pop(name, None) is not None
-    
+
     def add_handler(self, handler: Callable[[Alert], None]) -> None:
         """添加告警处理器"""
         with self._lock:
             self._handlers.append(handler)
-    
+
     def start(self) -> None:
         """启动告警管理器"""
         if self._running:
             return
-        
+
         self._running = True
         self._thread = threading.Thread(target=self._check_loop, daemon=True)
         self._thread.start()
-        
+
         logger.info("Alert manager started")
-    
+
     def stop(self) -> None:
         """停止告警管理器"""
         self._running = False
         if self._thread:
             self._thread.join(timeout=5)
-        
+
         logger.info("Alert manager stopped")
-    
+
     def _check_loop(self) -> None:
         """检查循环"""
         while self._running:
@@ -576,30 +576,30 @@ class AlertManager:
             except Exception as e:
                 logger.error(f"Alert check error: {e}")
                 time.sleep(5)
-    
+
     def _evaluate_rules(self) -> None:
         """评估告警规则"""
         now = time.time()
-        
+
         with self._lock:
             for rule in self._rules.values():
                 if not rule.enabled:
                     continue
-                
+
                 # 获取指标值
                 latest = self.metrics.get_latest(rule.metric_name)
                 if latest is None:
                     continue
-                
+
                 value = latest.value
                 triggered = self._evaluate_condition(value, rule.condition, rule.threshold)
-                
+
                 if triggered:
                     if not rule.is_triggered:
                         # 首次触发
                         rule.triggered_at = now
                         rule.is_triggered = True
-                    
+
                     # 检查持续时间
                     if now - rule.triggered_at >= rule.duration:
                         self._trigger_alert(rule, value)
@@ -609,7 +609,7 @@ class AlertManager:
                         rule.resolved_at = now
                         rule.is_triggered = False
                         self._resolve_alert(rule)
-    
+
     def _evaluate_condition(self, value: float, condition: str, threshold: float) -> bool:
         """评估条件"""
         if condition == '>':
@@ -623,11 +623,11 @@ class AlertManager:
         elif condition == '==':
             return value == threshold
         return False
-    
+
     def _trigger_alert(self, rule: AlertRule, value: float) -> None:
         """触发告警"""
         import uuid
-        
+
         alert_id = str(uuid.uuid4())
         alert = Alert(
             id=alert_id,
@@ -639,18 +639,18 @@ class AlertManager:
             threshold=rule.threshold,
             triggered_at=datetime.utcnow()
         )
-        
+
         self._alerts[alert_id] = alert
-        
+
         # 通知处理器
         for handler in self._handlers:
             try:
                 handler(alert)
             except Exception as e:
                 logger.error(f"Alert handler error: {e}")
-        
+
         logger.warning(f"Alert triggered: {rule.name} - {rule.message}")
-    
+
     def _resolve_alert(self, rule: AlertRule) -> None:
         """解决告警"""
         # 找到对应的告警并标记为已解决
@@ -659,7 +659,7 @@ class AlertManager:
                 alert.resolved_at = datetime.utcnow()
                 logger.info(f"Alert resolved: {rule.name}")
                 break
-    
+
     def get_alerts(
         self,
         active_only: bool = True,
@@ -668,15 +668,15 @@ class AlertManager:
         """获取告警列表"""
         with self._lock:
             alerts = list(self._alerts.values())
-            
+
             if active_only:
                 alerts = [a for a in alerts if a.resolved_at is None]
-            
+
             if severity:
                 alerts = [a for a in alerts if a.severity == severity]
-            
+
             return sorted(alerts, key=lambda a: a.triggered_at, reverse=True)
-    
+
     def acknowledge_alert(self, alert_id: str, user: str) -> bool:
         """确认告警"""
         with self._lock:
@@ -690,7 +690,7 @@ class AlertManager:
 
 class SystemMonitor:
     """系统监控器"""
-    
+
     def __init__(
         self,
         metrics: Optional[MetricsCollector] = None,
@@ -701,79 +701,79 @@ class SystemMonitor:
         self.metrics = metrics or MetricsCollector()
         self.health = health_checker or HealthChecker()
         self.alerts = alert_manager or AlertManager(self.metrics)
-        
+
         self._running = False
         self._collect_thread: Optional[threading.Thread] = None
-    
+
     def start(self) -> None:
         """启动监控"""
         if self._running:
             return
-        
+
         self._running = True
-        
+
         # 启动健康检查
         self.health.start()
-        
+
         # 启动告警管理
         self.alerts.start()
-        
+
         # 启动系统指标收集
         self._collect_thread = threading.Thread(
             target=self._collect_system_metrics,
             daemon=True
         )
         self._collect_thread.start()
-        
+
         logger.info("System monitor started")
-    
+
     def stop(self) -> None:
         """停止监控"""
         self._running = False
-        
+
         self.health.stop()
         self.alerts.stop()
-        
+
         if self._collect_thread:
             self._collect_thread.join(timeout=5)
-        
+
         logger.info("System monitor stopped")
-    
+
     def _collect_system_metrics(self) -> None:
         """收集系统指标"""
         import psutil
-        
+
         while self._running:
             try:
                 # CPU使用率
                 cpu_percent = psutil.cpu_percent(interval=1)
                 self.metrics.gauge('system_cpu_percent', cpu_percent)
-                
+
                 # 内存使用
                 memory = psutil.virtual_memory()
                 self.metrics.gauge('system_memory_percent', memory.percent)
                 self.metrics.gauge('system_memory_used_bytes', memory.used)
                 self.metrics.gauge('system_memory_available_bytes', memory.available)
-                
+
                 # 磁盘使用
                 disk = psutil.disk_usage('/')
                 self.metrics.gauge('system_disk_percent', disk.percent)
                 self.metrics.gauge('system_disk_used_bytes', disk.used)
                 self.metrics.gauge('system_disk_free_bytes', disk.free)
-                
+
                 # 网络IO
                 net_io = psutil.net_io_counters()
                 self.metrics.counter('system_network_bytes_sent', net_io.bytes_sent)
                 self.metrics.counter('system_network_bytes_recv', net_io.bytes_recv)
-                
+
                 # 进程数
                 self.metrics.gauge('system_process_count', len(psutil.pids()))
-                
+
             except Exception as e:
                 logger.error(f"System metrics collection error: {e}")
-            
+
             time.sleep(30)  # 每30秒收集一次
-    
+
     def get_overview(self) -> Dict[str, Any]:
         """获取监控概览"""
         return {
@@ -810,7 +810,7 @@ def record_metric(
 ) -> None:
     """记录指标的便捷函数"""
     monitor = get_monitor()
-    
+
     if metric_type == MetricType.COUNTER:
         monitor.metrics.counter(name, value, labels)
     elif metric_type == MetricType.GAUGE:

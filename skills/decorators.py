@@ -31,9 +31,9 @@ def skill(
 ):
     """
     Skill类装饰器
-    
+
     用于快速定义Skill类和元数据。
-    
+
     Args:
         name: Skill名称，默认为类名
         version: 版本号
@@ -46,10 +46,10 @@ def skill(
         timeout: 超时时间（秒）
         retry_count: 重试次数
         permissions: 权限列表
-        
+
     Returns:
         装饰后的类
-        
+
     示例:
         @skill(
             name="text_extractor",
@@ -64,7 +64,7 @@ def skill(
     def decorator(cls: Type[BaseSkill]) -> Type[BaseSkill]:
         # 保存原始__init__
         original_init = cls.__init__
-        
+
         @wraps(original_init)
         def new_init(self, *args, **kwargs):
             # 创建元数据
@@ -82,13 +82,13 @@ def skill(
                 retry_count=retry_count,
                 permissions=permissions or []
             )
-            
+
             # 调用父类__init__
             BaseSkill.__init__(self, metadata=metadata)
-            
+
             # 调用原始__init__
             original_init(self, *args, **kwargs)
-        
+
         cls.__init__ = new_init
         cls._is_skill = True  # 标记为Skill类
         cls._skill_name = name or cls.__name__.lower().replace("skill", "")
@@ -98,9 +98,9 @@ def skill(
         cls._skill_tags = tags or []
         cls._skill_dependencies = dependencies or []
         cls._skill_permissions = permissions or []
-        
+
         return cls
-    
+
     return decorator
 
 
@@ -114,9 +114,9 @@ def parameter(
 ):
     """
     参数装饰器
-    
+
     用于为Skill定义参数。
-    
+
     Args:
         name: 参数名
         param_type: 参数类型
@@ -124,10 +124,10 @@ def parameter(
         required: 是否必需
         default: 默认值
         choices: 可选值列表
-        
+
     Returns:
         装饰器函数
-        
+
     示例:
         @skill(name="my_skill")
         @parameter("input_file", str, "输入文件路径", required=True)
@@ -139,7 +139,7 @@ def parameter(
         # 获取或创建参数列表
         if not hasattr(cls, '_skill_parameters'):
             cls._skill_parameters = []
-        
+
         # 创建参数定义
         param = SkillParameter(
             name=name,
@@ -149,31 +149,31 @@ def parameter(
             default=default,
             choices=choices
         )
-        
+
         # 检查是否已存在同名参数
         existing = [p for p in cls._skill_parameters if p.name == name]
         if existing:
             cls._skill_parameters.remove(existing[0])
-        
+
         cls._skill_parameters.append(param)
-        
+
         return cls
-    
+
     return decorator
 
 
 def require(*skill_names: str):
     """
     依赖声明装饰器
-    
+
     声明Skill依赖的其他Skill。
-    
+
     Args:
         *skill_names: 依赖的Skill名称列表
-        
+
     Returns:
         装饰器函数
-        
+
     示例:
         @skill(name="advanced_processor")
         @require("text_extractor", "formatter")
@@ -183,12 +183,12 @@ def require(*skill_names: str):
     def decorator(cls: Type[BaseSkill]) -> Type[BaseSkill]:
         if not hasattr(cls, '_skill_dependencies'):
             cls._skill_dependencies = []
-        
+
         cls._skill_dependencies.extend(skill_names)
-        
+
         # 更新元数据中的依赖
         original_init = cls.__init__
-        
+
         @wraps(original_init)
         def new_init(self, *args, **kwargs):
             original_init(self, *args, **kwargs)
@@ -196,26 +196,26 @@ def require(*skill_names: str):
                 self._metadata.dependencies = list(set(
                     self._metadata.dependencies + cls._skill_dependencies
                 ))
-        
+
         cls.__init__ = new_init
-        
+
         return cls
-    
+
     return decorator
 
 
 def async_skill(cls: Type[BaseSkill]) -> Type[BaseSkill]:
     """
     异步Skill装饰器
-    
+
     将Skill标记为异步执行模式。
-    
+
     Args:
         cls: Skill类
-        
+
     Returns:
         装饰后的类
-        
+
     示例:
         @async_skill
         @skill(name="async_processor")
@@ -231,15 +231,15 @@ def async_skill(cls: Type[BaseSkill]) -> Type[BaseSkill]:
 def pipeline_skill(*steps: str):
     """
     管道Skill装饰器
-    
+
     将多个Skill组合成管道执行。
-    
+
     Args:
         *steps: 步骤Skill名称列表
-        
+
     Returns:
         装饰器函数
-        
+
     示例:
         @pipeline_skill("extract", "transform", "load")
         @skill(name="etl_pipeline")
@@ -250,23 +250,23 @@ def pipeline_skill(*steps: str):
         cls._pipeline_steps = steps
         cls._execution_mode = ExecutionMode.PIPELINE
         return cls
-    
+
     return decorator
 
 
 def retry(max_retries: int = 3, exceptions: Optional[tuple] = None):
     """
     重试装饰器
-    
+
     为Skill执行添加重试机制。
-    
+
     Args:
         max_retries: 最大重试次数
         exceptions: 触发重试的异常类型
-        
+
     Returns:
         装饰器函数
-        
+
     示例:
         @skill(name="unstable_skill")
         @retry(max_retries=3, exceptions=(ConnectionError, TimeoutError))
@@ -274,10 +274,10 @@ def retry(max_retries: int = 3, exceptions: Optional[tuple] = None):
             pass
     """
     exceptions = exceptions or (Exception,)
-    
+
     def decorator(cls: Type[BaseSkill]) -> Type[BaseSkill]:
         original_execute = cls.execute
-        
+
         @wraps(original_execute)
         def execute_with_retry(self, context, **kwargs):
             last_error = None
@@ -289,30 +289,30 @@ def retry(max_retries: int = 3, exceptions: Optional[tuple] = None):
                     if attempt < max_retries:
                         import time
                         time.sleep(0.5 * (attempt + 1))  # 指数退避
-            
+
             from .base import SkillResult
             return SkillResult.error_result(
                 f"执行失败，已重试{max_retries}次: {str(last_error)}"
             )
-        
+
         cls.execute = execute_with_retry
         return cls
-    
+
     return decorator
 
 
 def timeout(seconds: float):
     """
     超时装饰器
-    
+
     为Skill执行设置超时限制。
-    
+
     Args:
         seconds: 超时时间（秒）
-        
+
     Returns:
         装饰器函数
-        
+
     示例:
         @skill(name="slow_skill")
         @timeout(30.0)
@@ -322,22 +322,22 @@ def timeout(seconds: float):
     def decorator(cls: Type[BaseSkill]) -> Type[BaseSkill]:
         cls._timeout = seconds
         return cls
-    
+
     return decorator
 
 
 def permission(*perms: str):
     """
     权限装饰器
-    
+
     为Skill声明所需权限。
-    
+
     Args:
         *perms: 权限列表
-        
+
     Returns:
         装饰器函数
-        
+
     示例:
         @skill(name="admin_skill")
         @permission("admin", "write")
@@ -347,25 +347,25 @@ def permission(*perms: str):
     def decorator(cls: Type[BaseSkill]) -> Type[BaseSkill]:
         if not hasattr(cls, '_skill_permissions'):
             cls._skill_permissions = []
-        
+
         cls._skill_permissions.extend(perms)
         return cls
-    
+
     return decorator
 
 
 def tag(*tags: str):
     """
     标签装饰器
-    
+
     为Skill添加标签。
-    
+
     Args:
         *tags: 标签列表
-        
+
     Returns:
         装饰器函数
-        
+
     示例:
         @skill(name="processor")
         @tag("document", "text", "core")
@@ -375,25 +375,25 @@ def tag(*tags: str):
     def decorator(cls: Type[BaseSkill]) -> Type[BaseSkill]:
         if not hasattr(cls, '_skill_tags'):
             cls._skill_tags = []
-        
+
         cls._skill_tags.extend(tags)
         return cls
-    
+
     return decorator
 
 
 def category(cat: str):
     """
     分类装饰器
-    
+
     为Skill设置分类。
-    
+
     Args:
         cat: 分类名称
-        
+
     Returns:
         装饰器函数
-        
+
     示例:
         @skill(name="processor")
         @category("document_processing")
@@ -403,22 +403,22 @@ def category(cat: str):
     def decorator(cls: Type[BaseSkill]) -> Type[BaseSkill]:
         cls._skill_category = cat
         return cls
-    
+
     return decorator
 
 
 def version(ver: str):
     """
     版本装饰器
-    
+
     为Skill设置版本号。
-    
+
     Args:
         ver: 版本号
-        
+
     Returns:
         装饰器函数
-        
+
     示例:
         @skill(name="processor")
         @version("2.0.0")
@@ -428,7 +428,7 @@ def version(ver: str):
     def decorator(cls: Type[BaseSkill]) -> Type[BaseSkill]:
         cls._skill_version = ver
         return cls
-    
+
     return decorator
 
 
@@ -440,17 +440,17 @@ def simple_skill(
 ):
     """
     简单Skill装饰器组合
-    
+
     快速创建一个简单的Skill。
-    
+
     Args:
         name: Skill名称
         description: 描述
         **kwargs: 其他参数
-        
+
     Returns:
         装饰后的类
-        
+
     示例:
         @simple_skill("my_processor", "处理文本")
         class MyProcessor(BaseSkill):
@@ -464,19 +464,19 @@ def simple_skill(
             description=description,
             **kwargs
         )(cls)
-        
+
         return cls
-    
+
     return decorator
 
 
 def is_skill_class(cls: Type) -> bool:
     """
     检查类是否为Skill类
-    
+
     Args:
         cls: 要检查的类
-        
+
     Returns:
         是否为Skill类
     """
@@ -490,10 +490,10 @@ def is_skill_class(cls: Type) -> bool:
 def get_skill_info(cls: Type[BaseSkill]) -> Dict[str, Any]:
     """
     获取Skill类信息
-    
+
     Args:
         cls: Skill类
-        
+
     Returns:
         Skill信息字典
     """

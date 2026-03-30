@@ -13,16 +13,16 @@ Features:
 
 Example:
     >>> from docmcp.skills import SkillRegistry, BaseSkill
-    >>> 
+    >>>
     >>> # Register a custom skill
     >>> @skill_registry.register
     >>> class MySkill(BaseSkill):
     ...     name = "my_skill"
     ...     version = "1.0.0"
-    ...     
+    ...
     ...     async def execute(self, input_data, context):
     ...         return {"result": "processed"}
-    >>> 
+    >>>
     >>> # Execute skill
     >>> result = await skill_registry.execute("my_skill", input_data)
 """

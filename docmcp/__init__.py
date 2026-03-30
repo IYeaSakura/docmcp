@@ -1,7 +1,7 @@
 """
 DocMCP - Enterprise Document Processing System with MCP Protocol Support.
 
-A high-availability, high-security, high-reliability, high-scalability, 
+A high-availability, high-security, high-reliability, high-scalability,
 and high-performance document processing framework.
 
 Features:

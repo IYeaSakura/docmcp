@@ -28,18 +28,18 @@ from typing import Any, Dict, List, Optional, Union
 class MCPErrorCode(Enum):
     """
     MCP protocol error codes.
-    
+
     These error codes follow JSON-RPC 2.0 conventions with MCP-specific
     extensions for document processing scenarios.
     """
-    
+
     # Standard JSON-RPC errors
     PARSE_ERROR = -32700
     INVALID_REQUEST = -32600
     METHOD_NOT_FOUND = -32601
     INVALID_PARAMS = -32602
     INTERNAL_ERROR = -32603
-    
+
     # MCP-specific errors
     DOCUMENT_NOT_FOUND = -32001
     DOCUMENT_INVALID = -32002
@@ -56,27 +56,27 @@ class MCPErrorCode(Enum):
 class MCPMethod(Enum):
     """
     Standard MCP protocol methods.
-    
+
     These methods define the core operations supported by MCP servers.
     """
-    
+
     # Document operations
     PROCESS_DOCUMENT = "process_document"
     EXTRACT_CONTENT = "extract_content"
     CONVERT_FORMAT = "convert_format"
     VALIDATE_DOCUMENT = "validate_document"
     GET_DOCUMENT_INFO = "get_document_info"
-    
+
     # Skill operations
     LIST_SKILLS = "list_skills"
     EXECUTE_SKILL = "execute_skill"
     GET_SKILL_INFO = "get_skill_info"
-    
+
     # Context operations
     GET_CONTEXT = "get_context"
     SET_CONTEXT = "set_context"
     CLEAR_CONTEXT = "clear_context"
-    
+
     # Server operations
     GET_CAPABILITIES = "get_capabilities"
     HEALTH_CHECK = "health_check"
@@ -87,22 +87,22 @@ class MCPMethod(Enum):
 class MCPCapability:
     """
     MCP server capability descriptor.
-    
+
     Describes a capability that an MCP server provides, including
     its name, version, and configuration options.
-    
+
     Attributes:
         name: Capability name
         version: Capability version (semver)
         description: Human-readable description
         options: Capability-specific options
     """
-    
+
     name: str
     version: str = "1.0.0"
     description: str = ""
     options: Dict[str, Any] = field(default_factory=dict)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
@@ -111,7 +111,7 @@ class MCPCapability:
             "description": self.description,
             "options": self.options,
         }
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> MCPCapability:
         """Create from dictionary."""
@@ -127,19 +127,19 @@ class MCPCapability:
 class MCPError:
     """
     MCP protocol error.
-    
+
     Represents an error that occurred during MCP communication.
-    
+
     Attributes:
         code: Error code
         message: Human-readable error message
         data: Additional error data
     """
-    
+
     code: int
     message: str
     data: Optional[Dict[str, Any]] = None
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         error = {
@@ -149,7 +149,7 @@ class MCPError:
         if self.data:
             error["data"] = self.data
         return error
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> MCPError:
         """Create from dictionary."""
@@ -158,17 +158,17 @@ class MCPError:
             message=data["message"],
             data=data.get("data"),
         )
-    
+
     @classmethod
     def parse_error(cls, message: str = "Parse error") -> MCPError:
         """Create a parse error."""
         return cls(code=MCPErrorCode.PARSE_ERROR.value, message=message)
-    
+
     @classmethod
     def invalid_request(cls, message: str = "Invalid request") -> MCPError:
         """Create an invalid request error."""
         return cls(code=MCPErrorCode.INVALID_REQUEST.value, message=message)
-    
+
     @classmethod
     def method_not_found(cls, method: str) -> MCPError:
         """Create a method not found error."""
@@ -176,17 +176,17 @@ class MCPError:
             code=MCPErrorCode.METHOD_NOT_FOUND.value,
             message=f"Method not found: {method}"
         )
-    
+
     @classmethod
     def invalid_params(cls, message: str = "Invalid params") -> MCPError:
         """Create an invalid params error."""
         return cls(code=MCPErrorCode.INVALID_PARAMS.value, message=message)
-    
+
     @classmethod
     def internal_error(cls, message: str = "Internal error") -> MCPError:
         """Create an internal error."""
         return cls(code=MCPErrorCode.INTERNAL_ERROR.value, message=message)
-    
+
     @classmethod
     def document_not_found(cls, document_id: str) -> MCPError:
         """Create a document not found error."""
@@ -195,7 +195,7 @@ class MCPError:
             message=f"Document not found: {document_id}",
             data={"document_id": document_id}
         )
-    
+
     @classmethod
     def processing_failed(cls, message: str, details: Optional[Dict] = None) -> MCPError:
         """Create a processing failed error."""
@@ -204,7 +204,7 @@ class MCPError:
             message=message,
             data=details
         )
-    
+
     @classmethod
     def timeout(cls, operation: str, timeout_seconds: float) -> MCPError:
         """Create a timeout error."""
@@ -219,10 +219,10 @@ class MCPError:
 class MCPMessage:
     """
     MCP protocol message.
-    
+
     Represents a message in the MCP protocol. Messages can be requests,
     responses, or notifications.
-    
+
     Attributes:
         jsonrpc: Protocol version (always "2.0")
         id: Message ID for request/response correlation
@@ -230,7 +230,7 @@ class MCPMessage:
         params: Method parameters (for requests)
         result: Result data (for responses)
         error: Error data (for error responses)
-        
+
     Example:
         >>> # Request message
         >>> request = MCPMessage(
@@ -238,50 +238,50 @@ class MCPMessage:
         ...     method="process_document",
         ...     params={"document_id": "doc-456"}
         ... )
-        >>> 
+        >>>
         >>> # Response message
         >>> response = MCPMessage(
         ...     id="req-123",
         ...     result={"status": "completed"}
         ... )
     """
-    
+
     jsonrpc: str = "2.0"
     id: Optional[str] = None
     method: Optional[str] = None
     params: Optional[Dict[str, Any]] = None
     result: Optional[Any] = None
     error: Optional[Dict[str, Any]] = None
-    
+
     def __post_init__(self) -> None:
         """Generate ID if not provided for requests."""
         if self.id is None and self.method is not None:
             self.id = str(uuid.uuid4())
-    
+
     def is_request(self) -> bool:
         """Check if this is a request message."""
         return self.method is not None and self.id is not None
-    
+
     def is_notification(self) -> bool:
         """Check if this is a notification (request without id)."""
         return self.method is not None and self.id is None
-    
+
     def is_response(self) -> bool:
         """Check if this is a response message."""
         return self.id is not None and self.method is None
-    
+
     def is_success(self) -> bool:
         """Check if this is a successful response."""
         return self.is_response() and self.error is None
-    
+
     def is_error(self) -> bool:
         """Check if this is an error response."""
         return self.is_response() and self.error is not None
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert message to dictionary."""
         data: Dict[str, Any] = {"jsonrpc": self.jsonrpc}
-        
+
         if self.id is not None:
             data["id"] = self.id
         if self.method is not None:
@@ -292,13 +292,13 @@ class MCPMessage:
             data["result"] = self.result
         if self.error is not None:
             data["error"] = self.error
-        
+
         return data
-    
+
     def to_json(self) -> str:
         """Convert message to JSON string."""
         return json.dumps(self.to_dict())
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> MCPMessage:
         """Create message from dictionary."""
@@ -310,12 +310,12 @@ class MCPMessage:
             result=data.get("result"),
             error=data.get("error"),
         )
-    
+
     @classmethod
     def from_json(cls, json_str: str) -> MCPMessage:
         """Create message from JSON string."""
         return cls.from_dict(json.loads(json_str))
-    
+
     @classmethod
     def request(
         cls,
@@ -329,7 +329,7 @@ class MCPMessage:
             method=method,
             params=params or {},
         )
-    
+
     @classmethod
     def notification(
         cls,
@@ -342,7 +342,7 @@ class MCPMessage:
             method=method,
             params=params or {},
         )
-    
+
     @classmethod
     def success_response(
         cls,
@@ -354,7 +354,7 @@ class MCPMessage:
             id=id,
             result=result,
         )
-    
+
     @classmethod
     def error_response(
         cls,
@@ -372,22 +372,22 @@ class MCPMessage:
 class MCPRequest:
     """
     High-level MCP request wrapper.
-    
+
     Provides a more convenient interface for creating and handling
     MCP requests with type-safe parameters.
-    
+
     Attributes:
         method: Request method
         params: Request parameters
         id: Request ID
         context: Additional context data
     """
-    
+
     method: str
     params: Dict[str, Any] = field(default_factory=dict)
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     context: Dict[str, Any] = field(default_factory=dict)
-    
+
     def to_message(self) -> MCPMessage:
         """Convert to MCP message."""
         return MCPMessage.request(
@@ -395,7 +395,7 @@ class MCPRequest:
             params=self.params,
             id=self.id,
         )
-    
+
     @classmethod
     def from_message(cls, message: MCPMessage) -> MCPRequest:
         """Create from MCP message."""
@@ -410,75 +410,75 @@ class MCPRequest:
 class MCPResponse:
     """
     High-level MCP response wrapper.
-    
+
     Provides a more convenient interface for handling MCP responses
     with type-safe result access.
-    
+
     Attributes:
         id: Response ID (matches request ID)
         result: Response result data
         error: Response error (if failed)
         metadata: Response metadata
     """
-    
+
     id: str
     result: Optional[Any] = None
     error: Optional[MCPError] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
-    
+
     @property
     def is_success(self) -> bool:
         """Check if response is successful."""
         return self.error is None
-    
+
     @property
     def is_error(self) -> bool:
         """Check if response is an error."""
         return self.error is not None
-    
+
     def get_result(self, key: Optional[str] = None) -> Any:
         """
         Get result data.
-        
+
         Args:
             key: Optional key to access nested result
-            
+
         Returns:
             Result data or nested value
-            
+
         Raises:
             MCPError: If response is an error
         """
         if self.error:
             raise RuntimeError(f"MCP error: {self.error.message}")
-        
+
         if key is None:
             return self.result
-        
+
         if isinstance(self.result, dict):
             return self.result.get(key)
-        
+
         return None
-    
+
     def to_message(self) -> MCPMessage:
         """Convert to MCP message."""
         if self.error:
             return MCPMessage.error_response(self.id, self.error)
         return MCPMessage.success_response(self.id, self.result)
-    
+
     @classmethod
     def from_message(cls, message: MCPMessage) -> MCPResponse:
         """Create from MCP message."""
         error = None
         if message.error:
             error = MCPError.from_dict(message.error)
-        
+
         return cls(
             id=message.id or "",
             result=message.result,
             error=error,
         )
-    
+
     @classmethod
     def success(
         cls,
@@ -492,7 +492,7 @@ class MCPResponse:
             result=result,
             metadata=metadata or {},
         )
-    
+
     @classmethod
     def error(
         cls,
@@ -514,31 +514,31 @@ class MCPResponse:
 class MCPBatch:
     """
     Batch of MCP messages.
-    
+
     Supports batching multiple requests/responses in a single message.
     """
-    
+
     messages: List[MCPMessage] = field(default_factory=list)
-    
+
     def add(self, message: MCPMessage) -> None:
         """Add a message to the batch."""
         self.messages.append(message)
-    
+
     def to_json(self) -> str:
         """Convert batch to JSON."""
         return json.dumps([m.to_dict() for m in self.messages])
-    
+
     @classmethod
     def from_json(cls, json_str: str) -> MCPBatch:
         """Create batch from JSON."""
         data = json.loads(json_str)
         messages = [MCPMessage.from_dict(m) for m in data]
         return cls(messages=messages)
-    
+
     def get_responses(self) -> List[MCPMessage]:
         """Get all response messages."""
         return [m for m in self.messages if m.is_response()]
-    
+
     def get_requests(self) -> List[MCPMessage]:
         """Get all request messages."""
         return [m for m in self.messages if m.is_request()]

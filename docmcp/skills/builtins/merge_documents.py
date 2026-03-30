@@ -34,13 +34,13 @@ from ..context import SkillContext
 class MergeDocumentsSkill(BaseSkill):
     """
     文档合并Skill
-    
+
     将多个文档合并为一个统一的文档，支持：
     - 多种输入格式
     - 自定义输出格式
     - 添加标题和分隔
     - 生成目录
-    
+
     示例:
         skill = MergeDocumentsSkill()
         result = skill.run(
@@ -50,7 +50,7 @@ class MergeDocumentsSkill(BaseSkill):
             add_headers=True
         )
     """
-    
+
     OUTPUT_FORMATS = {
         "markdown": "md",
         "md": "md",
@@ -59,7 +59,7 @@ class MergeDocumentsSkill(BaseSkill):
         "txt": "txt",
         "json": "json",
     }
-    
+
     def execute(
         self,
         context: SkillContext,
@@ -73,7 +73,7 @@ class MergeDocumentsSkill(BaseSkill):
     ) -> SkillResult:
         """
         执行文档合并
-        
+
         Args:
             context: 执行上下文
             sources: 文档来源列表
@@ -82,19 +82,19 @@ class MergeDocumentsSkill(BaseSkill):
             add_page_breaks: 是否添加分页符
             custom_header: 自定义标题模板
             toc: 是否生成目录
-            
+
         Returns:
             合并结果
         """
         try:
             if not sources:
                 return SkillResult.error_result("文档列表为空")
-            
+
             # 获取提取文本Skill
             extract_skill = context.get_dependency("extract_text")
             if extract_skill is None:
                 return SkillResult.error_result("需要 extract_text Skill")
-            
+
             # 提取所有文档内容
             documents = []
             for i, source in enumerate(sources):
@@ -103,15 +103,15 @@ class MergeDocumentsSkill(BaseSkill):
                 )
                 if doc_info:
                     documents.append(doc_info)
-            
+
             if not documents:
                 return SkillResult.error_result("没有成功提取任何文档内容")
-            
+
             # 规范化输出格式
             output_format = output_format.lower()
             if output_format not in self.OUTPUT_FORMATS:
                 output_format = "markdown"
-            
+
             # 根据格式生成输出
             if output_format in ["markdown", "md"]:
                 merged_content = self._merge_as_markdown(
@@ -131,7 +131,7 @@ class MergeDocumentsSkill(BaseSkill):
                 merged_content = self._merge_as_markdown(
                     documents, add_headers, add_page_breaks, custom_header, toc
                 )
-            
+
             # 构建结果
             result = {
                 "content": merged_content,
@@ -149,20 +149,20 @@ class MergeDocumentsSkill(BaseSkill):
                 "total_chars": len(merged_content),
                 "merged_at": datetime.now().isoformat(),
             }
-            
+
             if toc:
                 result["toc"] = self._generate_toc(documents)
-            
+
             context.log_info(
                 f"成功合并 {len(documents)} 个文档，共 {result['total_chars']} 字符"
             )
-            
+
             return SkillResult.success_result(data=result)
-            
+
         except Exception as e:
             context.log_error(f"文档合并失败: {str(e)}")
             return SkillResult.error_result(f"文档合并失败: {str(e)}")
-    
+
     def _process_source(
         self,
         context: SkillContext,
@@ -182,20 +182,20 @@ class MergeDocumentsSkill(BaseSkill):
                 source_path = source
                 title = None
                 options = {}
-            
+
             # 提取文本
             result = extract_skill.run(
                 context,
                 source=source_path,
                 **options
             )
-            
+
             if not result.success:
                 context.log_warning(f"无法提取文档 {source_path}: {result.error}")
                 return None
-            
+
             data = result.data
-            
+
             # 获取标题
             if title is None:
                 if isinstance(source, dict):
@@ -205,7 +205,7 @@ class MergeDocumentsSkill(BaseSkill):
                 if title is None:
                     path = Path(str(source_path))
                     title = path.stem if hasattr(path, "stem") else f"Document {index}"
-            
+
             return {
                 "index": index,
                 "source": str(source_path),
@@ -214,11 +214,11 @@ class MergeDocumentsSkill(BaseSkill):
                 "format": data.get("format", "unknown"),
                 "metadata": data.get("metadata", {}),
             }
-            
+
         except Exception as e:
             context.log_warning(f"处理文档失败: {str(e)}")
             return None
-    
+
     def _merge_as_markdown(
         self,
         documents: List[Dict[str, Any]],
@@ -229,7 +229,7 @@ class MergeDocumentsSkill(BaseSkill):
     ) -> str:
         """合并为Markdown格式"""
         parts = []
-        
+
         # 添加目录
         if toc:
             parts.append("# 目录\n")
@@ -237,12 +237,12 @@ class MergeDocumentsSkill(BaseSkill):
                 title = doc.get("title", f"Document {doc['index']}")
                 parts.append(f"- [{title}](#{self._slugify(title)})")
             parts.append("\n---\n")
-        
+
         # 合并文档
         for i, doc in enumerate(documents):
             if add_headers:
                 title = doc.get("title", f"Document {doc['index']}")
-                
+
                 if custom_header:
                     header = custom_header.format(
                         index=doc["index"],
@@ -252,22 +252,22 @@ class MergeDocumentsSkill(BaseSkill):
                     )
                 else:
                     header = f"# {title}"
-                
+
                 parts.append(header)
                 parts.append("")
-            
+
             # 添加文档内容
             parts.append(doc.get("text", ""))
-            
+
             # 添加分隔
             if i < len(documents) - 1:
                 if add_page_breaks:
                     parts.append("\n<div style=\"page-break-after: always;\"></div>\n")
                 else:
                     parts.append("\n---\n")
-        
+
         return "\n\n".join(parts)
-    
+
     def _merge_as_html(
         self,
         documents: List[Dict[str, Any]],
@@ -278,7 +278,7 @@ class MergeDocumentsSkill(BaseSkill):
     ) -> str:
         """合并为HTML格式"""
         parts = []
-        
+
         # HTML头部
         parts.append("<!DOCTYPE html>")
         parts.append("<html>")
@@ -290,7 +290,7 @@ class MergeDocumentsSkill(BaseSkill):
         parts.append("</style>")
         parts.append("</head>")
         parts.append("<body>")
-        
+
         # 添加目录
         if toc:
             parts.append("<nav class=\"toc\">")
@@ -301,15 +301,15 @@ class MergeDocumentsSkill(BaseSkill):
                 parts.append(f'<li><a href="#doc-{doc["index"]}">{title}</a></li>')
             parts.append("</ul>")
             parts.append("</nav>")
-        
+
         # 合并文档
         for i, doc in enumerate(documents):
             doc_id = f'doc-{doc["index"]}'
             parts.append(f'<section id="{doc_id}" class="document">')
-            
+
             if add_headers:
                 title = doc.get("title", f"Document {doc['index']}")
-                
+
                 if custom_header:
                     header = custom_header.format(
                         index=doc["index"],
@@ -320,22 +320,22 @@ class MergeDocumentsSkill(BaseSkill):
                     parts.append(f"<h2>{header}</h2>")
                 else:
                     parts.append(f"<h2>{title}</h2>")
-            
+
             # 将Markdown转换为HTML（简化版）
             text = doc.get("text", "")
             html_content = self._markdown_to_html(text)
             parts.append(f'<div class="content">{html_content}</div>')
-            
+
             parts.append("</section>")
-            
+
             if i < len(documents) - 1 and add_page_breaks:
                 parts.append('<div class="page-break"></div>')
-        
+
         parts.append("</body>")
         parts.append("</html>")
-        
+
         return "\n".join(parts)
-    
+
     def _merge_as_text(
         self,
         documents: List[Dict[str, Any]],
@@ -345,11 +345,11 @@ class MergeDocumentsSkill(BaseSkill):
     ) -> str:
         """合并为纯文本格式"""
         parts = []
-        
+
         for i, doc in enumerate(documents):
             if add_headers:
                 title = doc.get("title", f"Document {doc['index']}")
-                
+
                 if custom_header:
                     header = custom_header.format(
                         index=doc["index"],
@@ -359,30 +359,30 @@ class MergeDocumentsSkill(BaseSkill):
                     )
                 else:
                     header = f"{'=' * 50}\n{title}\n{'=' * 50}"
-                
+
                 parts.append(header)
                 parts.append("")
-            
+
             parts.append(doc.get("text", ""))
-            
+
             if i < len(documents) - 1:
                 if add_page_breaks:
                     parts.append("\n" + "=" * 50 + "\n")
                 else:
                     parts.append("\n" + "-" * 50 + "\n")
-        
+
         return "\n\n".join(parts)
-    
+
     def _merge_as_json(self, documents: List[Dict[str, Any]]) -> str:
         """合并为JSON格式"""
         import json
-        
+
         output = {
             "merged_at": datetime.now().isoformat(),
             "document_count": len(documents),
             "documents": []
         }
-        
+
         for doc in documents:
             output["documents"].append({
                 "index": doc["index"],
@@ -392,9 +392,9 @@ class MergeDocumentsSkill(BaseSkill):
                 "text": doc.get("text", ""),
                 "metadata": doc.get("metadata", {}),
             })
-        
+
         return json.dumps(output, indent=2, ensure_ascii=False)
-    
+
     def _generate_toc(self, documents: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """生成目录"""
         toc = []
@@ -405,7 +405,7 @@ class MergeDocumentsSkill(BaseSkill):
                 "anchor": self._slugify(doc.get("title", "")),
             })
         return toc
-    
+
     def _slugify(self, text: str) -> str:
         """生成URL友好的锚点"""
         import re
@@ -413,44 +413,44 @@ class MergeDocumentsSkill(BaseSkill):
         text = re.sub(r'[^\w\s-]', '', text)
         text = re.sub(r'[-\s]+', '-', text)
         return text.strip('-')
-    
+
     def _markdown_to_html(self, text: str) -> str:
         """简单Markdown转HTML"""
         import re
-        
+
         html = text
-        
+
         # 转义HTML
         html = html.replace("&", "&amp;")
         html = html.replace("<", "&lt;")
         html = html.replace(">", "&gt;")
-        
+
         # 标题
         for i in range(6, 0, -1):
             pattern = f'^{"#" * i} (.+)$'
             html = re.sub(pattern, f'<h{i + 1}>\\1</h{i + 1}>', html, flags=re.MULTILINE)
-        
+
         # 粗体和斜体
         html = re.sub(r'\*\*\*(.+?)\*\*\*', r'<strong><em>\1</em></strong>', html)
         html = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', html)
         html = re.sub(r'\*(.+?)\*', r'<em>\1</em>', html)
-        
+
         # 代码
         html = re.sub(r'`([^`]+)`', r'<code>\1</code>', html)
         html = re.sub(r'```[\s\S]*?```', lambda m: f'<pre><code>{m.group(0)[3:-3]}</code></pre>', html)
-        
+
         # 链接
         html = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2">\1</a>', html)
-        
+
         # 段落
         paragraphs = html.split('\n\n')
         html = '\n'.join(f'<p>{p}</p>' if not p.startswith('<') else p for p in paragraphs)
-        
+
         # 换行
         html = html.replace('\n', '<br>\n')
-        
+
         return html
-    
+
     def _default_html_css(self) -> str:
         """默认HTML样式"""
         return """

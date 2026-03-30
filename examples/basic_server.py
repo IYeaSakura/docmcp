@@ -124,7 +124,7 @@ async def greet_tool(arguments: dict):
     """Greeting tool implementation."""
     name = arguments.get("name", "World")
     language = arguments.get("language", "en")
-    
+
     greetings = {
         "en": f"Hello, {name}!",
         "es": f"¡Hola, {name}!",
@@ -132,7 +132,7 @@ async def greet_tool(arguments: dict):
         "de": f"Hallo, {name}!",
         "zh": f"你好, {name}!"
     }
-    
+
     greeting = greetings.get(language, greetings["en"])
     return [{"type": "text", "text": greeting}]
 
@@ -165,7 +165,7 @@ async def calculate_tool(arguments: dict):
     operation = arguments.get("operation")
     a = arguments.get("a", 0)
     b = arguments.get("b", 0)
-    
+
     try:
         if operation == "add":
             result = a + b
@@ -179,7 +179,7 @@ async def calculate_tool(arguments: dict):
             result = a / b
         else:
             return [{"type": "text", "text": f"Error: Unknown operation '{operation}'"}]
-        
+
         return [{"type": "text", "text": f"Result: {result}"}]
     except Exception as e:
         return [{"type": "text", "text": f"Error: {str(e)}"}]
@@ -204,13 +204,13 @@ async def introduction_prompt(arguments: dict = None):
     """Introduction prompt implementation."""
     args = arguments or {}
     name = args.get("name", "there")
-    
+
     content = f"""Hello {name}! I'm an AI assistant powered by the Model Context Protocol.
 
 I can help you with various tasks using the resources, tools, and prompts provided by this server.
 
 How can I assist you today?"""
-    
+
     return [PromptMessage(role="user", content={"type": "text", "text": content})]
 
 
@@ -237,7 +237,7 @@ async def help_prompt(arguments: dict = None):
 - Use `help` (this prompt) for assistance
 
 What would you like to do?"""
-    
+
     return [PromptMessage(role="user", content={"type": "text", "text": content})]
 
 
@@ -253,7 +253,7 @@ async def main():
     print("Tools: echo, greet, calculate", file=sys.stderr)
     print("Prompts: introduction, help", file=sys.stderr)
     print("-" * 40, file=sys.stderr)
-    
+
     await server.run_stdio()
 
 

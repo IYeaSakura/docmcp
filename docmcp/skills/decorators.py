@@ -28,7 +28,7 @@ class ExecutionMode(Enum):
 
 class SkillParameter:
     """Skill参数定义"""
-    
+
     def __init__(
         self,
         name: str,
@@ -59,9 +59,9 @@ def skill(
 ):
     """
     Skill装饰器
-    
+
     用于将函数标记为Skill。
-    
+
     Args:
         name: Skill名称
         version: 版本号
@@ -86,16 +86,16 @@ def skill(
             tags=tags or [],
             dependencies=dependencies or [],
         )
-        
+
         # 将元数据附加到函数
         func._skill_metadata = metadata
         func._skill_execution_mode = execution_mode
         func._skill_timeout = timeout
         func._skill_retry_count = retry_count
         func._skill_permissions = permissions or []
-        
+
         return func
-    
+
     return decorator
 
 
@@ -108,9 +108,9 @@ def parameter(
 ):
     """
     参数装饰器
-    
+
     用于定义Skill的参数。
-    
+
     Args:
         name: 参数名称
         type: 参数类型
@@ -122,7 +122,7 @@ def parameter(
         # 获取或创建参数列表
         if not hasattr(func, '_skill_parameters'):
             func._skill_parameters = []
-        
+
         # 添加参数定义
         func._skill_parameters.append(SkillParameter(
             name=name,
@@ -131,7 +131,7 @@ def parameter(
             required=required,
             default=default
         ))
-        
+
         return func
-    
+
     return decorator

@@ -5,7 +5,7 @@
 system:
   name: "DocMCP Skills System"
   version: "1.0.0"
-  
+
   # 日志配置
   logging:
     level: "INFO"  # DEBUG, INFO, WARNING, ERROR
@@ -13,20 +13,20 @@ system:
     file: "logs/skills.log"
     max_size: "10MB"
     backup_count: 5
-  
+
   # 执行配置
   execution:
     default_timeout: 60.0  # 默认超时时间（秒）
     max_workers: 4  # 最大工作线程数
     enable_async: true  # 启用异步执行
     enable_parallel: true  # 启用并行执行
-  
+
   # 热更新配置
   hot_reload:
     enabled: true
     watch_interval: 5.0  # 检查间隔（秒）
     auto_reload: true  # 自动重新加载
-  
+
   # 安全配置
   security:
     enable_permissions: true  # 启用权限检查
@@ -47,7 +47,7 @@ registry:
       - "docmcp.skills.builtins"
       - "custom.skills"
     recursive: true
-  
+
   # 依赖解析配置
   dependency_resolution:
     auto_resolve: true  # 自动解析依赖
@@ -61,13 +61,13 @@ loader:
     - "./skills"
     - "./plugins"
     - "/usr/share/docmcp/skills"
-  
+
   # 缓存配置
   cache:
     enabled: true
     max_size: 100  # 最大缓存模块数
     ttl: 3600  # 缓存时间（秒）
-  
+
   # 文件监控
   file_watcher:
     enabled: true
@@ -85,13 +85,13 @@ scheduler:
   queue:
     max_size: 1000  # 最大队列大小
     priority_levels: 10  # 优先级级别数
-  
+
   # 执行器配置
   executor:
     type: "thread_pool"  # thread_pool, process_pool
     max_workers: 4
     thread_name_prefix: "SkillWorker"
-  
+
   # 任务配置
   task:
     default_priority: 5
@@ -114,19 +114,19 @@ skills:
     extract_metadata: true
     preserve_layout: false
     timeout: 120.0
-    
+
     # PDF提取配置
     pdf:
       engine: "PyPDF2"  # PyPDF2, pdfplumber
       extract_images: false
       password: null
-    
+
     # Word提取配置
     docx:
       extract_headers: true
       extract_footers: true
       extract_tables: true
-  
+
   # 格式转换Skill配置
   convert_format:
     enabled: true
@@ -140,7 +140,7 @@ skills:
         ignore_links: false
         ignore_images: false
         body_width: 0
-    
+
     # 支持的转换
     supported_conversions:
       - ["markdown", "html"]
@@ -149,36 +149,36 @@ skills:
       - ["yaml", "json"]
       - ["csv", "json"]
       - ["json", "csv"]
-  
+
   # 文档分析Skill配置
   analyze_document:
     enabled: true
     default_analysis_types:
       - "basic"
       - "keywords"
-    
+
     # 关键词提取配置
     keywords:
       max_keywords: 20
       min_word_length: 2
       use_stopwords: true
-    
+
     # 摘要生成配置
     summary:
       default_ratio: 0.2
       min_sentences: 3
       max_sentences: 10
-    
+
     # 可读性分析配置
     readability:
       calculate_flesch: true
       calculate_fog: true
-    
+
     # 情感分析配置
     sentiment:
       engine: "simple"  # simple, vader, textblob
       language: "auto"
-  
+
   # 文档合并Skill配置
   merge_documents:
     enabled: true
@@ -186,13 +186,13 @@ skills:
     add_headers: true
     add_page_breaks: false
     generate_toc: false
-    
+
     # 输出模板
     templates:
       header: "# {title}\n\n*来源: {source}*\n"
       separator: "\n---\n"
       page_break: '<div style="page-break-after: always;"></div>'
-    
+
     # 格式特定配置
     formats:
       markdown:
@@ -215,15 +215,15 @@ custom_skills:
       api_key: "${MY_API_KEY}"  # 从环境变量读取
       endpoint: "https://api.example.com"
       timeout: 30.0
-    
+
     dependencies:
       - "extract_text"
       - "analyze_document"
-    
+
     permissions:
       - "read"
       - "write"
-    
+
     resources:
       max_memory: "512MB"
       max_cpu: 2
@@ -243,14 +243,14 @@ plugins:
   directories:
     - "./plugins"
     - "/usr/share/docmcp/plugins"
-  
+
   # 插件列表
   enabled:
     - name: "pdf_plugin"
       version: ">=1.0.0"
       config:
         ocr_enabled: true
-    
+
     - name: "nlp_plugin"
       version: ">=2.0.0"
       config:
@@ -260,12 +260,12 @@ plugins:
 # ==================== 监控配置 ====================
 monitoring:
   enabled: true
-  
+
   # 指标收集
   metrics:
     enabled: true
     interval: 60  # 收集间隔（秒）
-    
+
     # 收集的指标
     collect:
       - "execution_count"
@@ -273,13 +273,13 @@ monitoring:
       - "error_rate"
       - "memory_usage"
       - "cpu_usage"
-  
+
   # 健康检查
   health_check:
     enabled: true
     interval: 30  # 检查间隔（秒）
     timeout: 5.0
-    
+
     # 检查项
     checks:
       - "registry"
@@ -287,23 +287,23 @@ monitoring:
       - "scheduler"
       - "disk_space"
       - "memory"
-  
+
   # 告警配置
   alerts:
     enabled: true
-    
+
     # 告警规则
     rules:
       - name: "high_error_rate"
         condition: "error_rate > 0.1"
         severity: "warning"
         cooldown: 300  # 冷却时间（秒）
-      
+
       - name: "skill_unavailable"
         condition: "skill_status == 'error'"
         severity: "critical"
         cooldown: 60
-      
+
       - name: "high_memory_usage"
         condition: "memory_usage > 0.9"
         severity: "warning"
@@ -313,12 +313,12 @@ monitoring:
 cache:
   enabled: true
   type: "memory"  # memory, redis, disk
-  
+
   # 内存缓存配置
   memory:
     max_size: 1000  # 最大条目数
     ttl: 3600  # 默认过期时间（秒）
-  
+
   # Redis缓存配置
   redis:
     host: "localhost"
@@ -326,7 +326,7 @@ cache:
     db: 0
     password: null
     key_prefix: "skills:"
-  
+
   # 磁盘缓存配置
   disk:
     path: "./cache"
@@ -339,34 +339,34 @@ security:
   authentication:
     enabled: false
     type: "token"  # token, oauth, ldap
-    
+
     token:
       secret: "${JWT_SECRET}"
       expire_hours: 24
-  
+
   # 授权配置
   authorization:
     enabled: true
-    
+
     # 角色定义
     roles:
       admin:
         permissions: ["*"]
-      
+
       user:
         permissions:
           - "skill:read"
           - "skill:execute"
-      
+
       guest:
         permissions:
           - "skill:read"
-  
+
   # 审计日志
   audit:
     enabled: true
     log_file: "logs/audit.log"
-    
+
     # 记录事件
     events:
       - "skill_register"

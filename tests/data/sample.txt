@@ -1,0 +1,23 @@
+Test Text Document for DocMCP
+================================
+
+This is a sample text document for testing text extraction.
+
+Section 1: Introduction
+-----------------------
+This document is used for testing the DocMCP document processing system.
+It contains various text elements that can be extracted and analyzed.
+
+Section 2: Features
+-------------------
+- Plain text support
+- Multi-line content
+- Special characters: @#$%^&*()
+- Numbers: 12345, 3.14159
+- Unicode: Hello World
+
+Section 3: Conclusion
+---------------------
+This is the end of the test document.
+
+Thank you for using DocMCP!

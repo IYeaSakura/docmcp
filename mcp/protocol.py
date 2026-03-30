@@ -45,20 +45,20 @@ class MCPErrorCode(Enum):
     # Connection errors
     CONNECTION_CLOSED = -1
     TIMEOUT = -2
-    
+
     # Protocol errors
     PROTOCOL_VERSION_MISMATCH = -10001
     CAPABILITY_NOT_SUPPORTED = -10002
-    
+
     # Resource errors
     RESOURCE_NOT_FOUND = -20001
     RESOURCE_ACCESS_DENIED = -20002
-    
+
     # Tool errors
     TOOL_NOT_FOUND = -30001
     TOOL_EXECUTION_ERROR = -30002
     INVALID_TOOL_ARGUMENTS = -30003
-    
+
     # Prompt errors
     PROMPT_NOT_FOUND = -40001
     PROMPT_RENDER_ERROR = -40002
@@ -70,13 +70,13 @@ class JSONRPCError:
     code: int
     message: str
     data: Optional[Dict[str, Any]] = None
-    
+
     def to_dict(self) -> Dict[str, Any]:
         result = {"code": self.code, "message": self.message}
         if self.data is not None:
             result["data"] = self.data
         return result
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "JSONRPCError":
         return cls(
@@ -93,7 +93,7 @@ class JSONRPCRequest:
     params: Optional[Dict[str, Any]] = None
     id: Optional[Union[str, int]] = None
     jsonrpc: str = JSONRPC_VERSION
-    
+
     def to_dict(self) -> Dict[str, Any]:
         result = {"jsonrpc": self.jsonrpc, "method": self.method}
         if self.params is not None:
@@ -101,7 +101,7 @@ class JSONRPCRequest:
         if self.id is not None:
             result["id"] = self.id
         return result
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "JSONRPCRequest":
         return cls(
@@ -110,7 +110,7 @@ class JSONRPCRequest:
             params=data.get("params"),
             id=data.get("id")
         )
-    
+
     def is_notification(self) -> bool:
         """Check if this is a notification (no id)."""
         return self.id is None
@@ -123,7 +123,7 @@ class JSONRPCResponse:
     result: Optional[Dict[str, Any]] = None
     error: Optional[JSONRPCError] = None
     jsonrpc: str = JSONRPC_VERSION
-    
+
     def to_dict(self) -> Dict[str, Any]:
         result = {"jsonrpc": self.jsonrpc, "id": self.id}
         if self.error is not None:
@@ -133,7 +133,7 @@ class JSONRPCResponse:
         else:
             result["result"] = {}
         return result
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "JSONRPCResponse":
         error = None
@@ -145,7 +145,7 @@ class JSONRPCResponse:
             result=data.get("result"),
             error=error
         )
-    
+
     def is_error(self) -> bool:
         """Check if this is an error response."""
         return self.error is not None
@@ -166,28 +166,28 @@ class MCPMethod(Enum):
     INITIALIZED = "notifications/initialized"
     SHUTDOWN = "shutdown"
     EXIT = "exit"
-    
+
     # Resources
     RESOURCES_LIST = "resources/list"
     RESOURCES_READ = "resources/read"
     RESOURCES_SUBSCRIBE = "resources/subscribe"
     RESOURCES_UNSUBSCRIBE = "resources/unsubscribe"
     RESOURCES_LIST_CHANGED = "notifications/resources/list_changed"
-    
+
     # Tools
     TOOLS_LIST = "tools/list"
     TOOLS_CALL = "tools/call"
     TOOLS_LIST_CHANGED = "notifications/tools/list_changed"
-    
+
     # Prompts
     PROMPTS_LIST = "prompts/list"
     PROMPTS_GET = "prompts/get"
     PROMPTS_LIST_CHANGED = "notifications/prompts/list_changed"
-    
+
     # Roots (client to server)
     ROOTS_LIST = "roots/list"
     ROOTS_LIST_CHANGED = "notifications/roots/list_changed"
-    
+
     # Sampling (server to client)
     SAMPLING_CREATE_MESSAGE = "sampling/createMessage"
 
@@ -203,7 +203,7 @@ class ServerCapabilities:
     tools: Optional[Dict[str, Any]] = None
     prompts: Optional[Dict[str, Any]] = None
     logging: Optional[Dict[str, Any]] = None
-    
+
     def to_dict(self) -> Dict[str, Any]:
         result = {}
         if self.resources is not None:
@@ -215,7 +215,7 @@ class ServerCapabilities:
         if self.logging is not None:
             result["logging"] = self.logging
         return result
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ServerCapabilities":
         return cls(
@@ -231,7 +231,7 @@ class ClientCapabilities:
     """Client capability declaration."""
     roots: Optional[Dict[str, Any]] = None
     sampling: Optional[Dict[str, Any]] = None
-    
+
     def to_dict(self) -> Dict[str, Any]:
         result = {}
         if self.roots is not None:
@@ -239,7 +239,7 @@ class ClientCapabilities:
         if self.sampling is not None:
             result["sampling"] = self.sampling
         return result
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ClientCapabilities":
         return cls(
@@ -258,14 +258,14 @@ class InitializeRequest:
     protocolVersion: str
     capabilities: ClientCapabilities
     clientInfo: Dict[str, str]
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "protocolVersion": self.protocolVersion,
             "capabilities": self.capabilities.to_dict(),
             "clientInfo": self.clientInfo
         }
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "InitializeRequest":
         return cls(
@@ -281,14 +281,14 @@ class InitializeResult:
     protocolVersion: str
     capabilities: ServerCapabilities
     serverInfo: Dict[str, str]
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "protocolVersion": self.protocolVersion,
             "capabilities": self.capabilities.to_dict(),
             "serverInfo": self.serverInfo
         }
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "InitializeResult":
         return cls(
@@ -309,7 +309,7 @@ class Resource:
     name: str
     description: Optional[str] = None
     mimeType: Optional[str] = None
-    
+
     def to_dict(self) -> Dict[str, Any]:
         result = {"uri": self.uri, "name": self.name}
         if self.description is not None:
@@ -317,7 +317,7 @@ class Resource:
         if self.mimeType is not None:
             result["mimeType"] = self.mimeType
         return result
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Resource":
         return cls(
@@ -335,7 +335,7 @@ class ResourceContent:
     mimeType: Optional[str] = None
     text: Optional[str] = None
     blob: Optional[str] = None  # base64 encoded binary data
-    
+
     def to_dict(self) -> Dict[str, Any]:
         result = {"uri": self.uri}
         if self.mimeType is not None:
@@ -345,7 +345,7 @@ class ResourceContent:
         if self.blob is not None:
             result["blob"] = self.blob
         return result
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ResourceContent":
         return cls(
@@ -361,7 +361,7 @@ class ListResourcesResult:
     """Result of resources/list request."""
     resources: List[Resource]
     nextCursor: Optional[str] = None
-    
+
     def to_dict(self) -> Dict[str, Any]:
         result = {"resources": [r.to_dict() for r in self.resources]}
         if self.nextCursor is not None:
@@ -373,7 +373,7 @@ class ListResourcesResult:
 class ReadResourceResult:
     """Result of resources/read request."""
     contents: List[ResourceContent]
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {"contents": [c.to_dict() for c in self.contents]}
 
@@ -391,7 +391,7 @@ class ToolParameter:
     properties: Optional[Dict[str, Any]] = None
     required: Optional[List[str]] = None
     items: Optional[Dict[str, Any]] = None
-    
+
     def to_dict(self) -> Dict[str, Any]:
         result = {"type": self.type}
         if self.description is not None:
@@ -413,14 +413,14 @@ class Tool:
     name: str
     description: str
     inputSchema: Dict[str, Any]
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "description": self.description,
             "inputSchema": self.inputSchema
         }
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Tool":
         return cls(
@@ -435,7 +435,7 @@ class TextContent:
     """Text content in tool result."""
     type: str = "text"
     text: str = ""
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {"type": self.type, "text": self.text}
 
@@ -446,7 +446,7 @@ class ImageContent:
     type: str = "image"
     data: str = ""  # base64 encoded
     mimeType: str = "image/png"
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {"type": self.type, "data": self.data, "mimeType": self.mimeType}
 
@@ -456,7 +456,7 @@ class EmbeddedResource:
     """Embedded resource in tool result."""
     type: str = "resource"
     resource: ResourceContent = field(default_factory=lambda: ResourceContent(uri=""))
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {"type": self.type, "resource": self.resource.to_dict()}
 
@@ -469,7 +469,7 @@ class ListToolsResult:
     """Result of tools/list request."""
     tools: List[Tool]
     nextCursor: Optional[str] = None
-    
+
     def to_dict(self) -> Dict[str, Any]:
         result = {"tools": [t.to_dict() for t in self.tools]}
         if self.nextCursor is not None:
@@ -482,7 +482,7 @@ class CallToolResult:
     """Result of tools/call request."""
     content: List[Dict[str, Any]]
     isError: bool = False
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {"content": self.content, "isError": self.isError}
 
@@ -497,7 +497,7 @@ class PromptArgument:
     name: str
     description: Optional[str] = None
     required: bool = False
-    
+
     def to_dict(self) -> Dict[str, Any]:
         result = {"name": self.name, "required": self.required}
         if self.description is not None:
@@ -511,7 +511,7 @@ class Prompt:
     name: str
     description: Optional[str] = None
     arguments: Optional[List[PromptArgument]] = None
-    
+
     def to_dict(self) -> Dict[str, Any]:
         result = {"name": self.name}
         if self.description is not None:
@@ -519,7 +519,7 @@ class Prompt:
         if self.arguments is not None:
             result["arguments"] = [a.to_dict() for a in self.arguments]
         return result
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Prompt":
         args = None
@@ -537,7 +537,7 @@ class PromptMessage:
     """A message in a prompt."""
     role: str  # "user" or "assistant"
     content: Dict[str, Any]  # TextContent or ImageContent
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {"role": self.role, "content": self.content}
 
@@ -547,7 +547,7 @@ class GetPromptResult:
     """Result of prompts/get request."""
     description: Optional[str] = None
     messages: List[PromptMessage] = field(default_factory=list)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         result = {"messages": [m.to_dict() for m in self.messages]}
         if self.description is not None:
@@ -560,7 +560,7 @@ class ListPromptsResult:
     """Result of prompts/list request."""
     prompts: List[Prompt]
     nextCursor: Optional[str] = None
-    
+
     def to_dict(self) -> Dict[str, Any]:
         result = {"prompts": [p.to_dict() for p in self.prompts]}
         if self.nextCursor is not None:
@@ -574,27 +574,27 @@ class ListPromptsResult:
 
 class MCPError(Exception):
     """Base MCP error."""
-    
+
     def __init__(self, code: int, message: str, data: Optional[Dict[str, Any]] = None):
         self.code = code
         self.message = message
         self.data = data
         super().__init__(message)
-    
+
     def to_jsonrpc_error(self) -> JSONRPCError:
         return JSONRPCError(code=self.code, message=self.message, data=self.data)
 
 
 class ProtocolError(MCPError):
     """Protocol-level error."""
-    
+
     def __init__(self, message: str, data: Optional[Dict[str, Any]] = None):
         super().__init__(JSONRPCErrorCode.INVALID_REQUEST.value, message, data)
 
 
 class MethodNotFoundError(MCPError):
     """Method not found error."""
-    
+
     def __init__(self, method: str):
         super().__init__(
             JSONRPCErrorCode.METHOD_NOT_FOUND.value,
@@ -604,14 +604,14 @@ class MethodNotFoundError(MCPError):
 
 class InvalidParamsError(MCPError):
     """Invalid parameters error."""
-    
+
     def __init__(self, message: str = "Invalid parameters"):
         super().__init__(JSONRPCErrorCode.INVALID_PARAMS.value, message)
 
 
 class ResourceNotFoundError(MCPError):
     """Resource not found error."""
-    
+
     def __init__(self, uri: str):
         super().__init__(
             MCPErrorCode.RESOURCE_NOT_FOUND.value,
@@ -621,7 +621,7 @@ class ResourceNotFoundError(MCPError):
 
 class ToolNotFoundError(MCPError):
     """Tool not found error."""
-    
+
     def __init__(self, name: str):
         super().__init__(
             MCPErrorCode.TOOL_NOT_FOUND.value,
@@ -631,7 +631,7 @@ class ToolNotFoundError(MCPError):
 
 class ToolExecutionError(MCPError):
     """Tool execution error."""
-    
+
     def __init__(self, name: str, message: str):
         super().__init__(
             MCPErrorCode.TOOL_EXECUTION_ERROR.value,
@@ -641,7 +641,7 @@ class ToolExecutionError(MCPError):
 
 class PromptNotFoundError(MCPError):
     """Prompt not found error."""
-    
+
     def __init__(self, name: str):
         super().__init__(
             MCPErrorCode.PROMPT_NOT_FOUND.value,
@@ -653,19 +653,19 @@ class PromptNotFoundError(MCPError):
 # Utility Functions
 # =============================================================================
 
-def create_request(method: str, params: Optional[Dict[str, Any]] = None, 
+def create_request(method: str, params: Optional[Dict[str, Any]] = None,
                    req_id: Optional[Union[str, int]] = None) -> JSONRPCRequest:
     """Create a JSON-RPC request."""
     return JSONRPCRequest(method=method, params=params, id=req_id)
 
 
-def create_response(req_id: Union[str, int], 
+def create_response(req_id: Union[str, int],
                     result: Optional[Dict[str, Any]] = None) -> JSONRPCResponse:
     """Create a JSON-RPC success response."""
     return JSONRPCResponse(id=req_id, result=result)
 
 
-def create_error_response(req_id: Union[str, int], 
+def create_error_response(req_id: Union[str, int],
                           error: JSONRPCError) -> JSONRPCResponse:
     """Create a JSON-RPC error response."""
     return JSONRPCResponse(id=req_id, error=error)
@@ -675,23 +675,23 @@ def parse_message(data: Union[str, Dict[str, Any]]) -> JSONRPCMessage:
     """Parse a JSON-RPC message from string or dict."""
     if isinstance(data, str):
         data = json.loads(data)
-    
+
     if not isinstance(data, dict):
         raise ProtocolError("Invalid JSON-RPC message: must be an object")
-    
+
     if "jsonrpc" not in data or data["jsonrpc"] != JSONRPC_VERSION:
         raise ProtocolError("Invalid or missing jsonrpc version")
-    
+
     # Check if it's a response (has 'result' or 'error')
     if "result" in data or "error" in data:
         if "id" not in data:
             raise ProtocolError("Response must have an id")
         return JSONRPCResponse.from_dict(data)
-    
+
     # It's a request
     if "method" not in data:
         raise ProtocolError("Request must have a method")
-    
+
     return JSONRPCRequest.from_dict(data)
 
 

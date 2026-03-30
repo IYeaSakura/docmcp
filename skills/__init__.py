@@ -8,7 +8,7 @@ Skills插件化系统
         BaseSkill, SkillRegistry, SkillLoader,
         SkillScheduler, SkillContext, skill, parameter
     )
-    
+
     # 定义Skill
     @skill(name="my_skill", description="我的Skill")
     @parameter("input", str, "输入文本", required=True)
@@ -16,15 +16,15 @@ Skills插件化系统
         def execute(self, context, **kwargs):
             text = kwargs.get("input")
             return SkillResult.success_result(data=text.upper())
-    
+
     # 注册并执行
     registry = SkillRegistry()
     registry.register(MySkill)
-    
+
     context = SkillContext(registry=registry)
     skill_instance = registry.load("my_skill", context)
     result = skill_instance.run(context, input="hello")
-    
+
     print(result.data)  # HELLO
 
 核心组件:
@@ -120,7 +120,7 @@ __all__ = [
     # 版本信息
     "__version__",
     "__author__",
-    
+
     # 基础类
     "BaseSkill",
     "SkillMetadata",
@@ -129,14 +129,14 @@ __all__ = [
     "SkillStatus",
     "ExecutionMode",
     "ExecutionContext",
-    
+
     # 异常
     "SkillError",
     "SkillNotFoundError",
     "SkillDependencyError",
     "SkillExecutionError",
     "SkillConfigurationError",
-    
+
     # 装饰器
     "skill",
     "parameter",
@@ -152,29 +152,29 @@ __all__ = [
     "simple_skill",
     "is_skill_class",
     "get_skill_info",
-    
+
     # 上下文
     "SkillContext",
     "ContextManager",
-    
+
     # 注册中心
     "SkillRegistry",
     "RegisteredSkill",
     "get_default_registry",
     "set_default_registry",
-    
+
     # 加载器
     "SkillLoader",
     "SkillImporter",
     "ModuleInfo",
-    
+
     # 调度器
     "SkillScheduler",
     "TaskInfo",
     "TaskStatus",
     "Task",
     "ExecutionPlan",
-    
+
     # 内置Skills
     "ExtractTextSkill",
     "ConvertFormatSkill",
@@ -190,12 +190,12 @@ def create_skill_system(
 ) -> tuple:
     """
     创建完整的Skill系统
-    
+
     Args:
         config: 配置字典
         auto_discover: 是否自动发现内置Skills
         hot_reload: 是否启用热更新
-        
+
     Returns:
         (registry, loader, scheduler, context) 元组
     """
@@ -203,13 +203,13 @@ def create_skill_system(
     from .loader import SkillLoader
     from .scheduler import SkillScheduler
     from .context import SkillContext
-    
+
     # 创建组件
     registry = SkillRegistry()
     loader = SkillLoader(registry, hot_reload=hot_reload)
     scheduler = SkillScheduler(registry)
     context = SkillContext(registry=registry, config=config or {})
-    
+
     # 自动发现内置Skills
     if auto_discover:
         # 注册内置Skills
@@ -219,7 +219,7 @@ def create_skill_system(
             AnalyzeDocumentSkill,
             MergeDocumentsSkill,
         )
-        
+
         for skill_class in [
             ExtractTextSkill,
             ConvertFormatSkill,
@@ -230,7 +230,7 @@ def create_skill_system(
                 registry.register(skill_class)
             except Exception:
                 pass
-    
+
     return registry, loader, scheduler, context
 
 
@@ -242,20 +242,20 @@ def quick_execute(
 ) -> "SkillResult":
     """
     快速执行Skill
-    
+
     Args:
         skill_name: Skill名称
         params: 执行参数
         registry: 注册中心（可选）
         config: 配置（可选）
-        
+
     Returns:
         执行结果
     """
     if registry is None:
         registry = get_default_registry()
-    
+
     context = SkillContext(registry=registry, config=config or {})
     skill = registry.require(skill_name)
-    
+
     return skill.run(context, **(params or {}))

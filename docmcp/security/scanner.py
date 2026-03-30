@@ -71,23 +71,23 @@ class ScanResult:
     metadata: Dict[str, Any] = field(default_factory=dict)
     scan_duration: float = 0.0
     error_message: str = ""
-    
+
     @property
     def is_clean(self) -> bool:
         """是否安全"""
         return self.status == ScanResultStatus.CLEAN and len(self.threats) == 0
-    
+
     @property
     def has_threats(self) -> bool:
         """是否有威胁"""
         return len(self.threats) > 0
-    
+
     @property
     def severity(self) -> str:
         """获取最高严重程度"""
         if not self.threats:
             return "none"
-        
+
         severity_order = {"low": 1, "medium": 2, "high": 3, "critical": 4}
         max_severity = max(
             self.threats,
@@ -102,21 +102,21 @@ class ScannerConfig:
     # 文件大小限制
     max_file_size_mb: int = 100
     max_scan_size_mb: int = 500
-    
+
     # 扫描选项
     scan_archives: bool = True
     scan_embedded: bool = True
     deep_scan: bool = False
-    
+
     # 威胁检测
     enable_signature_scan: bool = True
     enable_heuristic_scan: bool = True
     enable_behavior_scan: bool = False
-    
+
     # 敏感信息检测
     detect_secrets: bool = True
     detect_pii: bool = True  # 个人身份信息
-    
+
     # 性能
     max_scan_time: float = 300.0  # 最大扫描时间
     use_cache: bool = True
@@ -124,7 +124,7 @@ class ScannerConfig:
 
 class FileTypeValidator:
     """文件类型验证器"""
-    
+
     # 文件扩展名到MIME类型的映射
     EXTENSION_MAP: Dict[str, str] = {
         '.txt': 'text/plain',
@@ -151,7 +151,7 @@ class FileTypeValidator:
         '.tar': 'application/x-tar',
         '.gz': 'application/gzip',
     }
-    
+
     # 危险的MIME类型
     DANGEROUS_MIME_TYPES: Set[str] = {
         'application/x-executable',
@@ -162,14 +162,14 @@ class FileTypeValidator:
         'application/x-bat',
         'application/x-msdos-program',
     }
-    
+
     # 危险的文件扩展名
     DANGEROUS_EXTENSIONS: Set[str] = {
         '.exe', '.dll', '.bat', '.cmd', '.sh', '.bin',
         '.com', '.scr', '.pif', '.vbs', '.js', '.wsf',
         '.jar', '.class', '.py', '.rb', '.pl', '.php'
     }
-    
+
     def __init__(self):
         """初始化文件类型验证器"""
         try:
@@ -177,13 +177,13 @@ class FileTypeValidator:
         except Exception as e:
             logger.warning(f"Failed to initialize magic: {e}")
             self.magic = None
-    
+
     def get_mime_type(self, file_path: Union[str, Path, BinaryIO]) -> str:
         """获取文件的MIME类型
-        
+
         Args:
             file_path: 文件路径或文件对象
-            
+
         Returns:
             str: MIME类型
         """
@@ -205,7 +205,7 @@ class FileTypeValidator:
         except Exception as e:
             logger.error(f"Failed to get MIME type: {e}")
             return 'application/octet-stream'
-    
+
     def validate_file_type(
         self,
         file_path: Union[str, Path],
@@ -213,48 +213,48 @@ class FileTypeValidator:
         blocked_types: Optional[Set[str]] = None
     ) -> tuple[bool, str, str]:
         """验证文件类型
-        
+
         Args:
             file_path: 文件路径
             allowed_types: 允许的MIME类型集合
             blocked_types: 禁止的MIME类型集合
-            
+
         Returns:
             tuple: (是否有效, MIME类型, 错误信息)
         """
         mime_type = self.get_mime_type(file_path)
         ext = Path(file_path).suffix.lower()
-        
+
         # 检查危险扩展名
         if ext in self.DANGEROUS_EXTENSIONS:
             return False, mime_type, f"Dangerous file extension: {ext}"
-        
+
         # 检查危险MIME类型
         if mime_type in self.DANGEROUS_MIME_TYPES:
             return False, mime_type, f"Dangerous file type: {mime_type}"
-        
+
         # 检查禁止的类型
         if blocked_types and mime_type in blocked_types:
             return False, mime_type, f"Blocked file type: {mime_type}"
-        
+
         # 检查允许的类型
         if allowed_types and mime_type not in allowed_types:
             return False, mime_type, f"File type not allowed: {mime_type}"
-        
+
         return True, mime_type, ""
-    
+
     def is_dangerous(self, file_path: Union[str, Path]) -> bool:
         """检查文件是否危险
-        
+
         Args:
             file_path: 文件路径
-            
+
         Returns:
             bool: 是否危险
         """
         mime_type = self.get_mime_type(file_path)
         ext = Path(file_path).suffix.lower()
-        
+
         return (
             mime_type in self.DANGEROUS_MIME_TYPES or
             ext in self.DANGEROUS_EXTENSIONS
@@ -263,7 +263,7 @@ class FileTypeValidator:
 
 class ContentScanner:
     """内容扫描器"""
-    
+
     # 恶意代码模式
     MALICIOUS_PATTERNS: Dict[str, Dict[str, Any]] = {
         'eval_code': {
@@ -327,7 +327,7 @@ class ContentScanner:
             'description': 'Network socket usage detected'
         },
     }
-    
+
     # 敏感信息模式
     SECRET_PATTERNS: Dict[str, Dict[str, Any]] = {
         'api_key': {
@@ -367,43 +367,43 @@ class ContentScanner:
             'description': 'GitHub token detected'
         },
     }
-    
+
     def __init__(self, config: Optional[ScannerConfig] = None):
         """初始化内容扫描器
-        
+
         Args:
             config: 扫描器配置
         """
         self.config = config or ScannerConfig()
         self.file_validator = FileTypeValidator()
         self._scan_cache: Dict[str, ScanResult] = {}
-    
+
     def scan_file(
         self,
         file_path: Union[str, Path],
         content: Optional[bytes] = None
     ) -> ScanResult:
         """扫描文件
-        
+
         Args:
             file_path: 文件路径
             content: 文件内容（可选）
-            
+
         Returns:
             ScanResult: 扫描结果
         """
         import time
         start_time = time.time()
-        
+
         file_path = Path(file_path)
-        
+
         try:
             # 检查文件大小
             if content:
                 file_size = len(content)
             else:
                 file_size = file_path.stat().st_size
-            
+
             if file_size > self.config.max_file_size_mb * 1024 * 1024:
                 return ScanResult(
                     status=ScanResultStatus.ERROR,
@@ -414,38 +414,38 @@ class ContentScanner:
                     error_message=f"File too large: {file_size} bytes",
                     scan_duration=time.time() - start_time
                 )
-            
+
             # 读取文件内容
             if content is None:
                 with open(file_path, 'rb') as f:
                     content = f.read()
-            
+
             # 计算文件哈希
             file_hash = hashlib.sha256(content).hexdigest()
-            
+
             # 检查缓存
             if self.config.use_cache and file_hash in self._scan_cache:
                 cached = self._scan_cache[file_hash]
                 cached.file_path = str(file_path)
                 return cached
-            
+
             # 验证文件类型
             mime_type = self.file_validator.get_mime_type(file_path)
-            
+
             # 初始化结果
             threats: List[Threat] = []
-            
+
             # 扫描文本内容
             try:
                 text_content = content.decode('utf-8', errors='ignore')
                 threats.extend(self._scan_text_content(text_content))
             except Exception as e:
                 logger.warning(f"Failed to decode content: {e}")
-            
+
             # 扫描归档文件
             if self.config.scan_archives:
                 threats.extend(self._scan_archive(file_path, content))
-            
+
             # 确定状态
             if any(t.severity == 'critical' for t in threats):
                 status = ScanResultStatus.MALICIOUS
@@ -455,7 +455,7 @@ class ContentScanner:
                 status = ScanResultStatus.SUSPICIOUS
             else:
                 status = ScanResultStatus.CLEAN
-            
+
             result = ScanResult(
                 status=status,
                 file_path=str(file_path),
@@ -465,13 +465,13 @@ class ContentScanner:
                 threats=threats,
                 scan_duration=time.time() - start_time
             )
-            
+
             # 缓存结果
             if self.config.use_cache:
                 self._scan_cache[file_hash] = result
-            
+
             return result
-            
+
         except Exception as e:
             logger.error(f"Scan error for {file_path}: {e}")
             return ScanResult(
@@ -483,22 +483,22 @@ class ContentScanner:
                 error_message=str(e),
                 scan_duration=time.time() - start_time
             )
-    
+
     def scan_text(self, text: str, source: str = "text") -> ScanResult:
         """扫描文本内容
-        
+
         Args:
             text: 文本内容
             source: 来源标识
-            
+
         Returns:
             ScanResult: 扫描结果
         """
         import time
         start_time = time.time()
-        
+
         threats = self._scan_text_content(text)
-        
+
         if any(t.severity == 'critical' for t in threats):
             status = ScanResultStatus.MALICIOUS
         elif any(t.severity == 'high' for t in threats):
@@ -507,7 +507,7 @@ class ContentScanner:
             status = ScanResultStatus.SUSPICIOUS
         else:
             status = ScanResultStatus.CLEAN
-        
+
         return ScanResult(
             status=status,
             file_path=source,
@@ -517,27 +517,27 @@ class ContentScanner:
             threats=threats,
             scan_duration=time.time() - start_time
         )
-    
+
     def _scan_text_content(self, content: str) -> List[Threat]:
         """扫描文本内容
-        
+
         Args:
             content: 文本内容
-            
+
         Returns:
             List[Threat]: 发现的威胁列表
         """
         threats = []
         lines = content.split('\n')
-        
+
         # 扫描恶意代码模式
         if self.config.enable_signature_scan:
             for name, pattern_info in self.MALICIOUS_PATTERNS.items():
                 pattern = pattern_info['pattern']
-                
+
                 for line_num, line in enumerate(lines, 1):
                     matches = re.finditer(pattern, line, re.IGNORECASE)
-                    
+
                     for match in matches:
                         threat = Threat(
                             type=pattern_info['type'],
@@ -550,15 +550,15 @@ class ContentScanner:
                             confidence=0.8
                         )
                         threats.append(threat)
-        
+
         # 扫描敏感信息
         if self.config.detect_secrets:
             for name, pattern_info in self.SECRET_PATTERNS.items():
                 pattern = pattern_info['pattern']
-                
+
                 for line_num, line in enumerate(lines, 1):
                     matches = re.finditer(pattern, line, re.IGNORECASE)
-                    
+
                     for match in matches:
                         threat = Threat(
                             type=pattern_info['type'],
@@ -571,26 +571,26 @@ class ContentScanner:
                             confidence=0.9
                         )
                         threats.append(threat)
-        
+
         return threats
-    
+
     def _scan_archive(
         self,
         file_path: Path,
         content: bytes
     ) -> List[Threat]:
         """扫描归档文件
-        
+
         Args:
             file_path: 文件路径
             content: 文件内容
-            
+
         Returns:
             List[Threat]: 发现的威胁列表
         """
         threats = []
         ext = file_path.suffix.lower()
-        
+
         try:
             if ext == '.zip' or content[:4] == b'PK\x03\x04':
                 with zipfile.ZipFile(file_path if file_path.exists() else tempfile.NamedTemporaryFile(delete=False)) as zf:
@@ -604,7 +604,7 @@ class ContentScanner:
                                 description=f'Suspicious path in archive: {name}',
                                 location=name
                             ))
-                        
+
                         # 检查文件扩展名
                         file_ext = Path(name).suffix.lower()
                         if file_ext in FileTypeValidator.DANGEROUS_EXTENSIONS:
@@ -615,20 +615,20 @@ class ContentScanner:
                                 description=f'Dangerous file in archive: {name}',
                                 location=name
                             ))
-            
+
             elif ext in ['.tar', '.gz', '.tgz', '.bz2']:
                 # 类似地处理tar文件
                 pass
-                
+
         except Exception as e:
             logger.warning(f"Failed to scan archive {file_path}: {e}")
-        
+
         return threats
-    
+
     def clear_cache(self) -> None:
         """清除扫描缓存"""
         self._scan_cache.clear()
-    
+
     def get_cache_stats(self) -> Dict[str, int]:
         """获取缓存统计"""
         return {
@@ -639,43 +639,43 @@ class ContentScanner:
 
 class RealtimeScanner:
     """实时扫描器"""
-    
+
     def __init__(self, scanner: Optional[ContentScanner] = None):
         """初始化实时扫描器
-        
+
         Args:
             scanner: 内容扫描器
         """
         self.scanner = scanner or ContentScanner()
         self._watchers: Dict[str, Any] = {}
         self._callbacks: List[Callable[[ScanResult], None]] = []
-    
+
     def add_callback(self, callback: Callable[[ScanResult], None]) -> None:
         """添加扫描回调
-        
+
         Args:
             callback: 回调函数
         """
         self._callbacks.append(callback)
-    
+
     def scan_stream(self, stream: BinaryIO, chunk_size: int = 8192) -> ScanResult:
         """扫描数据流
-        
+
         Args:
             stream: 数据流
             chunk_size: 块大小
-            
+
         Returns:
             ScanResult: 扫描结果
         """
         content = b''
-        
+
         while True:
             chunk = stream.read(chunk_size)
             if not chunk:
                 break
             content += chunk
-            
+
             # 检查大小限制
             if len(content) > self.scanner.config.max_scan_size_mb * 1024 * 1024:
                 return ScanResult(
@@ -686,24 +686,24 @@ class RealtimeScanner:
                     mime_type="",
                     error_message="Stream too large"
                 )
-        
+
         # 创建临时文件进行扫描
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
             tmp.write(content)
             tmp_path = tmp.name
-        
+
         try:
             result = self.scanner.scan_file(tmp_path, content)
-            
+
             # 触发回调
             for callback in self._callbacks:
                 try:
                     callback(result)
                 except Exception as e:
                     logger.error(f"Callback error: {e}")
-            
+
             return result
-            
+
         finally:
             Path(tmp_path).unlink(missing_ok=True)
 
