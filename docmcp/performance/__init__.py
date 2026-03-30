@@ -6,6 +6,7 @@ DocMCP 性能模块
 
 from .cache import (
     LRUCache,
+    LRUCache as Cache,  # 别名，用于测试兼容性
     DiskCache,
     MultiLevelCache,
     CacheEntry,

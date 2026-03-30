@@ -41,11 +41,11 @@ FILE_SIGNATURES = {
     b'': 'txt',
 }
 
-# Office 文档子类型检测
+# Office 文档子类型检测（使用字符串值，延迟解析为枚举）
 OFFICE_SUBTYPES = {
-    'word/document.xml': DocumentType.DOCX,
-    'xl/workbook.xml': DocumentType.XLSX,
-    'ppt/presentation.xml': DocumentType.PPTX,
+    'word/document.xml': 'DOCX',
+    'xl/workbook.xml': 'XLSX',
+    'ppt/presentation.xml': 'PPTX',
 }
 
 
@@ -138,11 +138,11 @@ class FileTypeDetector:
             with zipfile.ZipFile(file_obj, 'r') as zf:
                 namelist = zf.namelist()
                 
-                for indicator, doc_type in OFFICE_SUBTYPES.items():
+                for indicator, doc_type_name in OFFICE_SUBTYPES.items():
                     if indicator in namelist:
                         if should_close:
                             file_obj.close()
-                        return doc_type
+                        return getattr(DocumentType, doc_type_name, DocumentType.UNKNOWN)
             
             if should_close:
                 file_obj.close()

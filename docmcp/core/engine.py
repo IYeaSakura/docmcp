@@ -665,3 +665,50 @@ class ProcessingEngine:
             f"queue_size={self._task_queue.qsize()}"
             f")"
         )
+    
+    # 测试兼容性方法
+    def get_supported_types(self) -> list:
+        """获取支持的文档类型列表（用于测试兼容性）"""
+        return list(self._adapters.keys())
+    
+    def get_supported_extensions(self) -> list:
+        """获取支持的文件扩展名列表（用于测试兼容性）"""
+        extensions = []
+        for fmt in self._adapters.keys():
+            extensions.extend(fmt.extensions)
+        return extensions
+    
+    def can_handle(self, file_path: Union[str, Path]) -> bool:
+        """检查是否能处理指定文件（用于测试兼容性）"""
+        ext = Path(file_path).suffix.lower()
+        return ext in self.get_supported_extensions()
+    
+    def get_handler_by_type(self, doc_type: DocumentType) -> Any:
+        """根据文档类型获取处理器（用于测试兼容性）"""
+        # 将 DocumentType 映射到 DocumentFormat
+        from .document import DocumentType as DT
+        type_to_format = {
+            DT.PDF: DocumentFormat.PDF,
+            DT.WORD_PROCESSING: DocumentFormat.DOCX,
+            DT.SPREADSHEET: DocumentFormat.XLSX,
+            DT.PRESENTATION: DocumentFormat.PPTX,
+            DT.TEXT: DocumentFormat.TXT,
+        }
+        fmt = type_to_format.get(doc_type)
+        return self._adapters.get(fmt) if fmt else None
+
+
+# 全局引擎实例（用于测试兼容性）
+_engine_instance: Optional[ProcessingEngine] = None
+
+def get_engine() -> ProcessingEngine:
+    """获取全局引擎实例（用于测试兼容性）"""
+    global _engine_instance
+    if _engine_instance is None:
+        _engine_instance = ProcessingEngine()
+    return _engine_instance
+
+def reset_engine() -> None:
+    """重置全局引擎实例（用于测试兼容性）"""
+    global _engine_instance
+    _engine_instance = None
