@@ -145,9 +145,15 @@ class SkillRegistry:
             if hasattr(skill_class, '_metadata'):
                 metadata = skill_class._metadata
             else:
-                # 创建默认元数据
+                # 创建默认元数据 - 使用snake_case命名
+                import re
+                name = skill_class.__name__
+                # CamelCase to snake_case
+                s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+                s2 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1)
+                snake_name = s2.lower()
                 metadata = SkillMetadata(
-                    name=skill_class.__name__.lower().replace("skill", ""),
+                    name=snake_name,
                     description=skill_class.__doc__ or ""
                 )
 

@@ -304,8 +304,36 @@ class ProcessingEngine:
 
         # Validators registry
         self._validators: List[Callable[[BaseDocument], ValidationResult]] = []
+        
+        # Register default handlers
+        self._register_default_handlers()
 
         logger.info(f"ProcessingEngine initialized (max_workers={max_workers})")
+    
+    def _register_default_handlers(self) -> None:
+        """Register default document format handlers."""
+        try:
+            from docmcp.core.handlers.word_handler import WordHandler
+            from docmcp.core.handlers.pdf_handler import PDFHandler
+            from docmcp.core.handlers.excel_handler import ExcelHandler
+            from docmcp.core.handlers.ppt_handler import PowerPointHandler
+            
+            handlers = [
+                (DocumentFormat.DOCX, WordHandler()),
+                (DocumentFormat.DOC, WordHandler()),
+                (DocumentFormat.PDF, PDFHandler()),
+                (DocumentFormat.XLSX, ExcelHandler()),
+                (DocumentFormat.XLS, ExcelHandler()),
+                (DocumentFormat.PPTX, PowerPointHandler()),
+                (DocumentFormat.PPT, PowerPointHandler()),
+            ]
+            
+            for fmt, handler in handlers:
+                self._adapters[fmt] = handler
+                
+            logger.info(f"Registered {len(handlers)} default handlers")
+        except ImportError as e:
+            logger.warning(f"Could not register default handlers: {e}")
 
     async def start(self) -> None:
         """Start the processing engine."""

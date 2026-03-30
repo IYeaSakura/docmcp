@@ -1,275 +1,277 @@
-# DocMCP - 文档处理MCP+Skills系统
+# DocMCP
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3.9+-blue.svg" alt="Python 3.9+">
-  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License">
-  <img src="https://img.shields.io/badge/Version-1.0.0-orange.svg" alt="Version 1.0.0">
-</p>
+Enterprise Document Processing System with MCP (Model Context Protocol) and Skills Support.
 
----
+[![Python 3.9+](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 目录
+## Overview
 
-- [项目介绍](#项目介绍)
-- [核心特性](#核心特性)
-- [支持格式](#支持格式)
-- [快速开始](#快速开始)
-- [安装说明](#安装说明)
-- [基本使用](#基本使用)
-- [项目结构](#项目结构)
-- [文档导航](#文档导航)
-- [贡献指南](#贡献指南)
-- [许可证](#许可证)
+DocMCP is a production-grade document processing platform designed for seamless integration with AI coding assistants like Claude Code, Kimi Code CLI, and Trae. It eliminates the need for temporary processing scripts when working with binary documents by providing a unified, secure, and robust interface for document content extraction and manipulation.
 
----
+### Key Features
 
-## 项目介绍
+| Feature | Description |
+|---------|-------------|
+| **Multi-Format Support** | Native support for DOC, DOCX, PDF, XLS, XLSX, PPT, PPTX, TXT, MD, HTML, and JSON |
+| **MCP Protocol** | Full implementation of Model Context Protocol for standardized AI assistant integration |
+| **Skills System** | Dynamic, pluggable skill system for custom document processing workflows |
+| **Security-First** | Sandboxed execution environment with resource limits, content scanning, and audit logging |
+| **High Performance** | Async processing engine with connection pooling, caching, and rate limiting |
+| **Content Extraction** | Complete document structure extraction including text, tables, images, and metadata |
 
-DocMCP是一个基于MCP（Model Context Protocol）协议和Skills系统构建的企业级文档处理平台。它提供了统一的文档抽象层，支持多种文档格式的解析、转换、提取和处理，同时具备强大的安全沙箱机制和高性能处理能力。
+### Supported Document Formats
 
-### 设计理念
+| Format | Extension | Read | Write | Convert | Notes |
+|--------|-----------|------|-------|---------|-------|
+| Word Document | .doc, .docx | Yes | Yes | Yes | Full formatting support |
+| PDF Document | .pdf | Yes | Partial | Yes | Requires LibreOffice for creation |
+| Excel Spreadsheet | .xls, .xlsx | Yes | Yes | Yes | Multi-sheet support |
+| PowerPoint | .ppt, .pptx | Yes | Yes | Yes | Slide notes and images |
+| Plain Text | .txt | Yes | Yes | Yes | Universal format |
+| Markdown | .md | Yes | Yes | Yes | Preserves structure |
+| HTML | .html, .htm | Yes | Yes | Yes | Web documents |
+| JSON | .json | Yes | Yes | Yes | Structured data |
 
-- **模块化设计**: 各组件独立，易于扩展和维护
-- **插件化架构**: Skills系统支持动态加载和自定义扩展
-- **安全第一**: 内置沙箱机制，确保文档处理安全
-- **高性能**: 连接池、缓存、异步处理，最大化性能
+## Quick Start
 
----
-
-## 核心特性
-
-| 特性 | 描述 |
-|------|------|
-| **多格式支持** | 支持 doc/docx/pdf/xlsx/xls/ppt/pptx 等主流文档格式 |
-| **MCP协议** | 基于Model Context Protocol的标准化通信协议 |
-| **Skills系统** | 可插拔的技能系统，支持自定义文档处理逻辑 |
-| **安全沙箱** | 内置沙箱环境，隔离文档处理，防止恶意代码执行 |
-| **高性能** | 连接池、缓存机制、异步处理，支持高并发 |
-| **监控告警** | 内置性能监控和告警系统 |
-| **易于扩展** | 插件化架构，易于添加新格式和技能 |
-| **完整审计** | 操作日志和审计追踪 |
-
----
-
-## 支持格式
-
-| 格式 | 扩展名 | 读取 | 写入 | 转换 |
-|------|--------|------|------|------|
-| Word文档 | .doc, .docx | ✅ | ✅ | ✅ |
-| PDF文档 | .pdf | ✅ | ⚠️ | ✅ |
-| Excel表格 | .xls, .xlsx | ✅ | ✅ | ✅ |
-| PPT演示 | .ppt, .pptx | ✅ | ✅ | ✅ |
-| 纯文本 | .txt | ✅ | ✅ | ✅ |
-| Markdown | .md | ✅ | ✅ | ✅ |
-| HTML | .html, .htm | ✅ | ✅ | ✅ |
-| JSON | .json | ✅ | ✅ | ✅ |
-
-> ⚠️ PDF写入需要额外配置（如wkhtmltopdf或pandoc）
-
----
-
-## 快速开始
-
-### 1. 安装
+### Installation
 
 ```bash
-# 克隆仓库
-git clone https://github.com/your-org/docmcp.git
-cd docmcp
+# Basic installation
+pip install docmcp
 
-# 创建虚拟环境
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# 或
-venv\Scripts\activate  # Windows
+# Full installation with all features
+pip install docmcp[all]
 
-# 安装依赖
-pip install -r requirements.txt
-
-# 安装可选依赖（PDF处理）
-pip install -r requirements-optional.txt
+# Development installation
+pip install -e ".[dev]"
 ```
 
-### 2. 快速启动
+### Basic Usage
 
 ```python
-from docmcp import DocumentProcessor
+from docmcp import ProcessingEngine, DocumentFormat
 
-# 创建处理器实例
-processor = DocumentProcessor()
+# Initialize the processing engine
+engine = ProcessingEngine()
 
-# 处理文档
-result = processor.process("example.docx")
-print(result.content)
+# Process a document
+doc = engine.load_document("path/to/document.docx")
 
-# 转换格式
-processor.convert("example.docx", "output.pdf")
+# Extract content
+content = await engine.extract_content(doc)
+print(content.text)
+print(content.tables)
+print(content.metadata)
 ```
 
-### 3. 使用MCP服务器
+### Using Skills
+
+```python
+from docmcp.skills import SkillRegistry, SkillContext
+
+# Create skill registry
+registry = SkillRegistry()
+
+# Execute a built-in skill
+context = SkillContext(document=doc)
+result = await registry.execute("extract_text", context)
+print(result.data)
+```
+
+### MCP Server
 
 ```python
 from docmcp.mcp import MCPServer
 
-# 启动MCP服务器
+# Start MCP server
 server = MCPServer(host="0.0.0.0", port=8080)
-server.start()
+await server.start()
 ```
 
----
-
-## 安装说明
-
-### 环境要求
-
-- Python 3.9+
-- 内存: 最低 2GB，推荐 4GB+
-- 磁盘: 最低 1GB 可用空间
-
-### 依赖安装
-
-```bash
-# 基础依赖
-pip install docmcp
-
-# 完整安装（包含所有可选依赖）
-pip install docmcp[all]
-
-# 特定格式支持
-pip install docmcp[pdf]      # PDF处理
-pip install docmcp[office]   # Office文档
-pip install docmcp[excel]    # Excel处理
-```
-
-### Docker部署
-
-```bash
-# 构建镜像
-docker build -t docmcp:latest .
-
-# 运行容器
-docker run -d -p 8080:8080 docmcp:latest
-```
-
----
-
-## 基本使用
-
-### 文档处理
-
-```python
-from docmcp import DocumentProcessor
-
-processor = DocumentProcessor()
-
-# 读取文档
-with open("document.docx", "rb") as f:
-    doc = processor.load(f, format="docx")
-
-# 提取文本
-text = doc.extract_text()
-print(text)
-
-# 提取元数据
-metadata = doc.get_metadata()
-print(metadata)
-```
-
-### 格式转换
-
-```python
-# 转换为不同格式
-processor.convert("input.docx", "output.pdf")
-processor.convert("input.pdf", "output.txt")
-processor.convert("input.xlsx", "output.csv")
-```
-
-### 使用Skills
-
-```python
-from docmcp.skills import SkillRegistry
-
-# 注册自定义Skill
-registry = SkillRegistry()
-registry.register("summarize", SummarizeSkill())
-
-# 执行Skill
-result = registry.execute("summarize", document=doc)
-```
-
-### MCP客户端
-
-```python
-from docmcp.mcp import MCPClient
-
-client = MCPClient(server_url="http://localhost:8080")
-
-# 发送处理请求
-response = client.process_document(
-    file_path="document.pdf",
-    operations=["extract_text", "extract_metadata"]
-)
-```
-
----
-
-## 项目结构
+## Project Structure
 
 ```
 docmcp/
-├── docmcp/                    # 主代码目录
-│   ├── __init__.py           # 包入口
-│   ├── core/                 # 核心引擎
-│   │   ├── __init__.py
-│   │   ├── document.py       # 文档抽象基类
-│   │   ├── processor.py      # 处理引擎
-│   │   ├── handlers/         # 格式处理器
-│   │   │   ├── __init__.py
-│   │   │   ├── docx.py       # Word处理器
-│   │   │   ├── pdf.py        # PDF处理器
-│   │   │   ├── excel.py      # Excel处理器
-│   │   │   ├── ppt.py        # PPT处理器
-│   │   │   └── base.py       # 处理器基类
-│   │   └── utils/            # 工具函数
-│   │       ├── __init__.py
-│   │       ├── validators.py # 验证工具
-│   │       └── converters.py # 转换工具
-│   ├── mcp/                  # MCP协议实现
-│   │   ├── __init__.py
-│   │   ├── server.py         # MCP服务器
-│   │   ├── client.py         # MCP客户端
-│   │   ├── protocol.py       # 协议定义
-│   │   └── handlers/         # 请求处理器
-│   ├── skills/               # Skills系统
-│   │   ├── __init__.py
-│   │   ├── registry.py       # 技能注册表
-│   │   ├── loader.py         # 技能加载器
-│   │   ├── scheduler.py      # 调度器
-│   │   └── base.py           # 技能基类
-│   ├── security/             # 安全模块
-│   │   ├── __init__.py
-│   │   ├── sandbox.py        # 沙箱环境
-│   │   ├── permissions.py    # 权限管理
-│   │   └── audit.py          # 审计日志
-│   └── performance/          # 性能模块
-│       ├── __init__.py
-│       ├── cache.py          # 缓存管理
-│       ├── pool.py           # 连接池
-│       └── monitor.py        # 性能监控
-├── tests/                    # 测试目录
-│   ├── unit/                 # 单元测试
-│   ├── integration/          # 集成测试
-│   └── fixtures/             # 测试数据
-├── docs/                     # 文档目录
-├── examples/                 # 示例代码
-├── scripts/                  # 脚本工具
-├── requirements.txt          # 依赖文件
-├── pyproject.toml            # 项目配置
-└── README.md                 # 本文件
+├── docmcp/                     # Main package
+│   ├── core/                   # Core document processing
+│   │   ├── document.py         # Document abstraction
+│   │   ├── engine.py           # Processing engine
+│   │   ├── pipeline.py         # Processing pipeline
+│   │   └── handlers/           # Format handlers
+│   │       ├── word_handler.py
+│   │       ├── pdf_handler.py
+│   │       ├── excel_handler.py
+│   │       └── ppt_handler.py
+│   ├── mcp/                    # MCP protocol implementation
+│   │   ├── protocol.py         # Protocol definitions
+│   │   ├── server.py           # MCP server
+│   │   └── client.py           # MCP client
+│   ├── skills/                 # Skills system
+│   │   ├── base.py             # Base skill classes
+│   │   ├── registry.py         # Skill registry
+│   │   ├── scheduler.py        # Task scheduler
+│   │   └── builtins/           # Built-in skills
+│   ├── security/               # Security module
+│   │   ├── sandbox.py          # Sandbox execution
+│   │   ├── auth.py             # Authentication
+│   │   └── scanner.py          # Content scanning
+│   └── performance/            # Performance module
+│       ├── cache.py            # Caching
+│       ├── pool.py             # Connection pooling
+│       └── limiter.py          # Rate limiting
+├── tests/                      # Test suite
+├── examples/                   # Usage examples
+└── skills/                     # Additional skills directory
 ```
 
----
+## Architecture
 
-## 许可证
+### Core Components
 
-本项目采用 [MIT License](./LICENSE) 开源协议。
+1. **Document Abstraction Layer**
+   - Unified interface for all document types
+   - Automatic format detection
+   - Content extraction and manipulation
+
+2. **Processing Engine**
+   - Async/await based architecture
+   - Plugin-based handler system
+   - Pipeline processing support
+
+3. **Skills System**
+   - Dynamic loading and execution
+   - Dependency resolution
+   - Sandboxed execution environment
+
+4. **MCP Protocol Implementation**
+   - JSON-RPC 2.0 based communication
+   - Method routing and handlers
+   - Connection management
+
+5. **Security Layer**
+   - Process isolation
+   - Resource limits (memory, CPU, time)
+   - Content validation and scanning
+
+## Configuration
+
+DocMCP can be configured via environment variables or configuration files:
+
+```yaml
+# config.yaml
+app:
+  name: DocMCP
+  debug: false
+
+sandbox:
+  max_memory_mb: 512
+  max_execution_time: 30
+  network_enabled: false
+
+cache:
+  enabled: true
+  type: memory
+  ttl: 3600
+```
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DOCMCP_DEBUG` | Enable debug mode | `false` |
+| `DOCMCP_SANDBOX_MAX_MEMORY` | Max memory for sandbox (MB) | `512` |
+| `DOCMCP_SANDBOX_MAX_TIME` | Max execution time (seconds) | `30` |
+| `DOCMCP_CACHE_TYPE` | Cache type (memory/redis) | `memory` |
+| `DOCMCP_LOG_LEVEL` | Logging level | `info` |
+
+## Testing
+
+Run the test suite:
+
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run with coverage
+pytest tests/ --cov=docmcp --cov-report=html
+
+# Run specific test categories
+pytest tests/ -m "not slow"
+pytest tests/ -m integration
+pytest tests/ -m security
+```
+
+## Development
+
+### Setting up Development Environment
+
+```bash
+# Clone repository
+git clone https://github.com/your-org/docmcp.git
+cd docmcp
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install development dependencies
+pip install -e ".[dev]"
+
+# Install pre-commit hooks
+pre-commit install
+```
+
+### Code Style
+
+```bash
+# Format code
+black docmcp/ tests/
+
+# Sort imports
+isort docmcp/ tests/
+
+# Type checking
+mypy docmcp/
+
+# Linting
+flake8 docmcp/
+```
+
+## Security Considerations
+
+1. **Sandboxed Execution**: All user-provided code runs in isolated subprocesses with strict resource limits
+2. **Content Validation**: File type validation using magic bytes before processing
+3. **Audit Logging**: All operations are logged for security review
+4. **Network Isolation**: Sandboxed processes have no network access by default
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- Built for seamless integration with AI coding assistants
+- Inspired by the need for robust document processing in AI workflows
+- Uses industry-standard libraries for document format support
+
+## Support
+
+For issues and feature requests, please use the [GitHub issue tracker](https://github.com/your-org/docmcp/issues).
+
+## Roadmap
+
+- [ ] Enhanced OCR support for scanned documents
+- [ ] Additional output formats (EPUB, MOBI)
+- [ ] Cloud storage integration (S3, Azure Blob, GCS)
+- [ ] Distributed processing support
+- [ ] Web-based management interface

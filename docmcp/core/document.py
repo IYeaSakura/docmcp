@@ -154,30 +154,48 @@ class DocumentFormat(Enum):
 class DocumentType(Enum):
     """High-level document type classification."""
 
-    WORD_PROCESSING = auto()  # DOC, DOCX
-    SPREADSHEET = auto()      # XLS, XLSX
-    PRESENTATION = auto()     # PPT, PPTX
-    PDF = auto()              # PDF
-    TEXT = auto()             # TXT, MD
-    WEB = auto()              # HTML
-    UNKNOWN = auto()          # Unknown
+    # Document format types
+    DOC = "doc"
+    DOCX = "docx"
+    PDF = "pdf"
+    XLS = "xls"
+    XLSX = "xlsx"
+    PPT = "ppt"
+    PPTX = "pptx"
+    TXT = "txt"
+    HTML = "html"
+    MD = "md"
+    UNKNOWN = "unknown"
 
     @classmethod
     def from_format(cls, fmt: DocumentFormat) -> DocumentType:
         """Get DocumentType from DocumentFormat."""
         mapping = {
-            DocumentFormat.DOC: cls.WORD_PROCESSING,
-            DocumentFormat.DOCX: cls.WORD_PROCESSING,
-            DocumentFormat.XLS: cls.SPREADSHEET,
-            DocumentFormat.XLSX: cls.SPREADSHEET,
-            DocumentFormat.PPT: cls.PRESENTATION,
-            DocumentFormat.PPTX: cls.PRESENTATION,
+            DocumentFormat.DOC: cls.DOC,
+            DocumentFormat.DOCX: cls.DOCX,
+            DocumentFormat.XLS: cls.XLS,
+            DocumentFormat.XLSX: cls.XLSX,
+            DocumentFormat.PPT: cls.PPT,
+            DocumentFormat.PPTX: cls.PPTX,
             DocumentFormat.PDF: cls.PDF,
-            DocumentFormat.TXT: cls.TEXT,
-            DocumentFormat.MD: cls.TEXT,
-            DocumentFormat.HTML: cls.WEB,
+            DocumentFormat.TXT: cls.TXT,
+            DocumentFormat.MD: cls.MD,
+            DocumentFormat.HTML: cls.HTML,
         }
         return mapping.get(fmt, cls.UNKNOWN)
+
+    @classmethod
+    def from_extension(cls, extension: str) -> DocumentType:
+        """Get DocumentType from file extension.
+        
+        Args:
+            extension: File extension (with or without dot)
+            
+        Returns:
+            DocumentType enum value
+        """
+        fmt = DocumentFormat.from_extension(extension)
+        return cls.from_format(fmt)
 
 
 class ContentType(Enum):
@@ -234,13 +252,25 @@ class DocumentMetadata:
     source: str = "unknown"
     encoding: str = "utf-8"
 
+    @property
+    def created(self) -> datetime:
+        """Alias for created_at (for test compatibility)."""
+        return self.created_at
+    
+    @property
+    def modified(self) -> datetime:
+        """Alias for modified_at (for test compatibility)."""
+        return self.modified_at
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert metadata to dictionary."""
         return {
             "filename": self.filename,
             "file_size": self.file_size,
             "created_at": self.created_at.isoformat(),
+            "created": self.created_at.isoformat(),  # Alias for compatibility
             "modified_at": self.modified_at.isoformat(),
+            "modified": self.modified_at.isoformat(),  # Alias for compatibility
             "author": self.author,
             "title": self.title,
             "description": self.description,

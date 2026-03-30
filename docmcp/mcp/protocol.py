@@ -255,12 +255,13 @@ class MCPMessage:
 
     def __post_init__(self) -> None:
         """Generate ID if not provided for requests."""
-        if self.id is None and self.method is not None:
-            self.id = str(uuid.uuid4())
+        # Only auto-generate ID for regular requests, not notifications
+        # Notifications should explicitly have id=None
+        pass
 
     def is_request(self) -> bool:
         """Check if this is a request message."""
-        return self.method is not None and self.id is not None
+        return self.method is not None
 
     def is_notification(self) -> bool:
         """Check if this is a notification (request without id)."""
@@ -337,11 +338,15 @@ class MCPMessage:
         params: Optional[Dict[str, Any]] = None,
     ) -> MCPMessage:
         """Create a notification message (no id)."""
-        return cls(
-            id=None,
-            method=method,
-            params=params or {},
-        )
+        # Create without calling __post_init__ by using object.__new__
+        msg = cls.__new__(cls)
+        msg.jsonrpc = "2.0"
+        msg.id = None
+        msg.method = method
+        msg.params = params or {}
+        msg.result = None
+        msg.error = None
+        return msg
 
     @classmethod
     def success_response(
@@ -460,6 +465,18 @@ class MCPResponse:
 
         return None
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert response to dictionary."""
+        data: Dict[str, Any] = {
+            "id": self.id,
+            "jsonrpc": "2.0",
+        }
+        if self.error:
+            data["error"] = self.error.to_dict()
+        else:
+            data["result"] = self.result
+        return data
+
     def to_message(self) -> MCPMessage:
         """Convert to MCP message."""
         if self.error:
@@ -494,7 +511,7 @@ class MCPResponse:
         )
 
     @classmethod
-    def error(
+    def error_response(
         cls,
         id: str,
         error: MCPError,

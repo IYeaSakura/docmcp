@@ -294,16 +294,23 @@ class SandboxExecutor:
         working_dir: Optional[str] = None
     ) -> SandboxResult:
         """执行文件"""
+        import sys
+        # Use appropriate Python command based on platform
+        if sys.platform == "win32":
+            python_cmd = ["python", "-u"]
+        else:
+            python_cmd = ["python3", "-u"]
+        
         interpreters = {
-            "python": ["python3", "-u"],
-            "python3": ["python3", "-u"],
+            "python": python_cmd,
+            "python3": python_cmd,
             "node": ["node"],
             "javascript": ["node"],
-            "bash": ["bash"],
-            "sh": ["sh"],
+            "bash": ["bash"] if sys.platform != "win32" else ["cmd", "/c"],
+            "sh": ["sh"] if sys.platform != "win32" else ["cmd", "/c"],
         }
 
-        interpreter = interpreters.get(language, ["python3", "-u"])
+        interpreter = interpreters.get(language, python_cmd)
         command = interpreter + [file_path]
 
         return self.execute_command(

@@ -431,7 +431,7 @@ class MCPServer:
 
             # Update success metrics
             if self.enable_metrics:
-                if response.is_success():
+                if response.is_success:
                     self._metrics["requests_success"] += 1
                 else:
                     self._metrics["requests_error"] += 1
@@ -464,7 +464,7 @@ class MCPServer:
         # Validate message
         if not message.is_request() and not message.is_notification():
             error = MCPError.invalid_request("Message is not a request")
-            return MCPResponse.error(message.id or "", error)
+            return MCPResponse.error_response(message.id or "", error)
 
         # Handle notifications (no response needed)
         if message.is_notification():

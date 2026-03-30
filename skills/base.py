@@ -205,9 +205,19 @@ class BaseSkill(ABC):
     def _create_default_metadata(self) -> SkillMetadata:
         """创建默认元数据"""
         return SkillMetadata(
-            name=self.__class__.__name__.lower().replace("skill", ""),
+            name=self._to_snake_case(self.__class__.__name__),
             description=self.__doc__ or ""
         )
+    
+    @staticmethod
+    def _to_snake_case(name: str) -> str:
+        """将CamelCase转换为snake_case"""
+        import re
+        # First, insert underscores before capital letters (except the first)
+        s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+        # Then handle consecutive capitals
+        s2 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1)
+        return s2.lower()
 
     @property
     def id(self) -> str:
